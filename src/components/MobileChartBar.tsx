@@ -9,7 +9,7 @@ export function MobileChartBar({ visibility, onToggle }: Props) {
   const activeCount = Object.values(visibility).filter(Boolean).length;
 
   return (
-    <div className="shrink-0 bg-gray-950/95 backdrop-blur-lg border-t border-white/10 px-2 py-2">
+    <div className="shrink-0 bg-gray-950/95 backdrop-blur-lg border-t border-white/10 px-2 py-2" style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom, 0px))' }}>
       <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
         {CARD_CONFIGS.map(card => {
           const active = visibility[card.id] !== false;
