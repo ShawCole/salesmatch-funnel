@@ -74,15 +74,3 @@ svg, canvas {
   background: rgba(255, 255, 255, 0.15);
   border-radius: 2px;
 }
-
-/* Auto-fade Recharts tooltips on touch devices */
-@media (pointer: coarse) {
-  .recharts-tooltip-wrapper {
-    animation: tooltip-fade 3s forwards !important;
-  }
-}
-
-@keyframes tooltip-fade {
-  0%, 70% { opacity: 1; }
-  100% { opacity: 0; }
-}

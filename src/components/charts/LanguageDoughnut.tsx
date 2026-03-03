@@ -22,7 +22,7 @@ export function LanguageDoughnut({ segments, totalCount: _totalCount, height = '
 
   useEffect(() => {
     if (hover && isMobile) {
-      fadeTimer.current = setTimeout(() => setHover(null), 3000);
+      fadeTimer.current = setTimeout(() => setHover(null), 5000);
       return () => clearTimeout(fadeTimer.current);
     }
   }, [hover, isMobile]);

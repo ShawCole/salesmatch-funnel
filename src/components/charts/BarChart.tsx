@@ -8,6 +8,7 @@ import {
   CartesianGrid,
 } from 'recharts';
 import type { CountItem } from '../../utils/aggregation';
+import { useMobileTooltipDismiss } from '../../hooks/useMobileTooltipDismiss';
 
 interface Props {
   data: CountItem[];
@@ -35,8 +36,10 @@ function AngledTick({ x, y, payload }: { x: number; y: number; payload: { value:
 }
 
 export function BarChart({ data, color = '#7c3aed', height = '100%', xAxisHeight = 38 }: Props) {
+  const { ref: dismissRef, onTouchStart } = useMobileTooltipDismiss();
   return (
-    <ResponsiveContainer width="100%" height={height as number | `${number}%`}>
+    <div ref={dismissRef} onTouchStart={onTouchStart} style={{ width: '100%', height }}>
+    <ResponsiveContainer width="100%" height="100%">
       <RechartsBarChart data={data} margin={{ top: 4, right: 4, bottom: 17, left: 0 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" vertical={false} />
         <XAxis
@@ -72,5 +75,6 @@ export function BarChart({ data, color = '#7c3aed', height = '100%', xAxisHeight
         />
       </RechartsBarChart>
     </ResponsiveContainer>
+    </div>
   );
 }

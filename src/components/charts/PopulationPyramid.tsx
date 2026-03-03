@@ -8,6 +8,7 @@ import {
   ReferenceLine,
 } from 'recharts';
 import type { PyramidItem } from '../../utils/aggregation';
+import { useMobileTooltipDismiss } from '../../hooks/useMobileTooltipDismiss';
 
 interface Props {
   data: PyramidItem[];
@@ -26,6 +27,7 @@ function niceMax(val: number): number {
 }
 
 export function PopulationPyramid({ data, height = '100%', compact }: Props) {
+  const { ref: dismissRef, onTouchStart } = useMobileTooltipDismiss();
   const maxVal = Math.max(
     ...data.map(d => Math.max(d.male, Math.abs(d.female))),
     1,
@@ -38,7 +40,8 @@ export function PopulationPyramid({ data, height = '100%', compact }: Props) {
     : [-nice, -half, -nice / 4, 0, nice / 4, half, nice];
 
   return (
-    <ResponsiveContainer width="100%" height={height as number | `${number}%`}>
+    <div ref={dismissRef} onTouchStart={onTouchStart} style={{ width: '100%', height }}>
+    <ResponsiveContainer width="100%" height="100%">
       <BarChart
         data={data}
         layout="vertical"
@@ -109,5 +112,6 @@ export function PopulationPyramid({ data, height = '100%', compact }: Props) {
         }} />
       </BarChart>
     </ResponsiveContainer>
+    </div>
   );
 }
