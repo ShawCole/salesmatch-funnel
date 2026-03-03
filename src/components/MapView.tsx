@@ -22,6 +22,7 @@ export function MapView() {
   const demoZipCounts = useZipAggregation(demographicFilteredRecords);
   const allZipCounts = useZipAggregation(allRecords);
   const [geojson, setGeojson] = useState<GeoJSON.FeatureCollection | null>(null);
+  const [mapReady, setMapReady] = useState(false);
   const [hoveredZip, setHoveredZip] = useState<string | null>(null);
   const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -69,6 +70,7 @@ export function MapView() {
   // Also apply when the source finishes loading (handles race condition)
   // and on map idle (catches cases where sourcedata fires before listener is attached)
   useEffect(() => {
+    if (!mapReady) return;
     const map = mapRef.current?.getMap();
     if (!map) return;
 
@@ -84,11 +86,13 @@ export function MapView() {
 
     map.on('sourcedata', onSourceData);
     map.on('idle', onIdle);
+    // Apply immediately in case source already loaded before listeners attached
+    applyFeatureStates();
     return () => {
       map.off('sourcedata', onSourceData as any);
       map.off('idle', onIdle);
     };
-  }, [applyFeatureStates]);
+  }, [applyFeatureStates, mapReady]);
 
   // Derive hover data from current state — always fresh, no stale values after clicks
   const hoveredZipStr = hoveredZip ? String(hoveredZip).padStart(5, '0') : null;
@@ -185,6 +189,7 @@ export function MapView() {
         initialViewState={INITIAL_VIEW}
         style={{ width: '100%', height: '100%' }}
         mapStyle="mapbox://styles/mapbox/dark-v11"
+        onLoad={() => setMapReady(true)}
         interactiveLayerIds={geojson?.features.length ? ['zip-fill'] : []}
         onMouseMove={onHover}
         onMouseLeave={clearHover}
