@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { useTooltipFlip } from '../../hooks/useTooltipFlip';
@@ -56,6 +56,15 @@ export function FamilyDoughnut({ records, height = '100%', compact }: Props) {
   const [hover, setHover] = useState<{ name: string; value: number } | null>(null);
   const [mouse, setMouse] = useState({ x: 0, y: 0 });
   const { ref: tipRef, getStyle } = useTooltipFlip();
+  const fadeTimer = useRef<ReturnType<typeof setTimeout>>();
+  const isMobile = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
+
+  useEffect(() => {
+    if (hover && isMobile) {
+      fadeTimer.current = setTimeout(() => setHover(null), 3000);
+      return () => clearTimeout(fadeTimer.current);
+    }
+  }, [hover, isMobile]);
 
   const onMouseMove = useCallback((e: React.MouseEvent) => {
     setMouse({ x: e.clientX, y: e.clientY });

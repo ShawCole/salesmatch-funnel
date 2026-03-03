@@ -124,7 +124,7 @@ export function MapView() {
       setHoverPos({ x: e.point.x, y: e.point.y });
       if (isMobile) {
         if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
-        hoverTimerRef.current = setTimeout(clearHover, 2000);
+        hoverTimerRef.current = setTimeout(clearHover, 3000);
       }
     } else {
       clearHover();
