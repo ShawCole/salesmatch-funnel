@@ -1,4 +1,5 @@
-import { useRef, useLayoutEffect } from 'react';
+import { useRef, useEffect, useLayoutEffect } from 'react';
+import { useMobileFade } from '../../hooks/useMobileTooltipDismiss';
 
 interface Entry {
   name: string;
@@ -15,6 +16,15 @@ interface Props {
 
 export function ChartTooltip({ active, payload, label, formatter }: Props) {
   const ref = useRef<HTMLDivElement>(null);
+  const { style: fadeStyle, resetFade } = useMobileFade();
+
+  // Reset fade timer whenever tooltip activates or data changes
+  const payloadKey = payload?.map(p => `${p.name}:${p.value}`).join(',');
+  useEffect(() => {
+    if (active && payload?.length) {
+      resetFade();
+    }
+  }, [active, payloadKey]);
 
   useLayoutEffect(() => {
     const el = ref.current;
@@ -40,6 +50,7 @@ export function ChartTooltip({ active, payload, label, formatter }: Props) {
         color: '#f3f4f6',
         whiteSpace: 'nowrap',
         pointerEvents: 'none',
+        ...fadeStyle,
       }}
     >
       {label != null && <div style={{ marginBottom: 2, color: '#9ca3af', fontSize: 11 }}>{label}</div>}

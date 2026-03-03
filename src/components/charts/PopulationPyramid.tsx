@@ -8,7 +8,7 @@ import {
   ReferenceLine,
 } from 'recharts';
 import type { PyramidItem } from '../../utils/aggregation';
-import { useMobileTooltipDismiss } from '../../hooks/useMobileTooltipDismiss';
+import { ChartTooltip } from './ChartTooltip';
 
 interface Props {
   data: PyramidItem[];
@@ -27,7 +27,6 @@ function niceMax(val: number): number {
 }
 
 export function PopulationPyramid({ data, height = '100%', compact }: Props) {
-  const { ref: dismissRef, onTouchStart } = useMobileTooltipDismiss();
   const maxVal = Math.max(
     ...data.map(d => Math.max(d.male, Math.abs(d.female))),
     1,
@@ -40,8 +39,7 @@ export function PopulationPyramid({ data, height = '100%', compact }: Props) {
     : [-nice, -half, -nice / 4, 0, nice / 4, half, nice];
 
   return (
-    <div ref={dismissRef} onTouchStart={onTouchStart} style={{ width: '100%', height }}>
-    <ResponsiveContainer width="100%" height="100%">
+    <ResponsiveContainer width="100%" height={height as number | `${number}%`}>
       <BarChart
         data={data}
         layout="vertical"
@@ -72,18 +70,14 @@ export function PopulationPyramid({ data, height = '100%', compact }: Props) {
         />
         <Tooltip
           cursor={false}
-          contentStyle={{
-            background: 'rgba(17,24,39,0.95)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: 8,
-            color: '#f3f4f6',
-            fontSize: 12,
-          }}
-          labelFormatter={(label: any) => String(label) === '65 and older' ? '65+' : String(label)}
-          formatter={(value: any, name: any) => [
-            Math.abs(Number(value)).toLocaleString(),
-            name === 'female' ? 'Female' : 'Male',
-          ]}
+          content={
+            <ChartTooltip
+              formatter={(value: number, name: string) => [
+                Math.abs(value).toLocaleString(),
+                name === 'female' ? 'Female' : 'Male',
+              ]}
+            />
+          }
         />
         <ReferenceLine x={0} stroke="rgba(255,255,255,0.2)" />
         <Bar dataKey="female" stackId="pyramid" fill="#ec4899" animationDuration={500} shape={(props: any) => {
@@ -112,6 +106,5 @@ export function PopulationPyramid({ data, height = '100%', compact }: Props) {
         }} />
       </BarChart>
     </ResponsiveContainer>
-    </div>
   );
 }

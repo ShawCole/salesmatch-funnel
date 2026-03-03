@@ -1,7 +1,8 @@
-import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { useTooltipFlip } from '../../hooks/useTooltipFlip';
+import { useMobileFade } from '../../hooks/useMobileTooltipDismiss';
 import type { IntentRecord } from '../../types/record';
 
 interface Props {
@@ -54,37 +55,28 @@ export function FamilyDoughnut({ records, height = '100%', compact }: Props) {
   const total = records.length || 1;
 
   const [hover, setHover] = useState<{ name: string; value: number } | null>(null);
-  const [fading, setFading] = useState(false);
   const [mouse, setMouse] = useState({ x: 0, y: 0 });
   const { ref: tipRef, getStyle } = useTooltipFlip();
-  const fadeTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const isMobile = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
-
-  useEffect(() => {
-    if (hover && isMobile) {
-      setFading(false);
-      fadeTimer.current = setTimeout(() => setFading(true), 5000);
-      return () => clearTimeout(fadeTimer.current);
-    }
-  }, [hover, isMobile]);
+  const { style: fadeStyle, resetFade, isMobile } = useMobileFade();
 
   const onMouseMove = useCallback((e: React.MouseEvent) => {
     setMouse({ x: e.clientX, y: e.clientY });
   }, []);
 
   const onEnter = useCallback((_: unknown, index: number, ring: Segment[]) => {
-    setFading(false);
+    resetFade();
     setHover(ring[index]);
   }, []);
 
   const onLeave = useCallback(() => {
-    setHover(null);
-  }, []);
+    // On mobile, let the fade timer handle dismissal — don't clear immediately
+    if (!isMobile) setHover(null);
+  }, [isMobile]);
 
   const tipPos = hover ? getStyle(mouse.x, mouse.y) : { left: 0, top: 0 };
 
   return (
-    <div style={{ width: '100%', height, position: 'relative' }} onMouseMove={onMouseMove} onMouseLeave={() => setHover(null)}>
+    <div style={{ width: '100%', height, position: 'relative' }} onMouseMove={onMouseMove} onMouseLeave={onLeave}>
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie
@@ -128,7 +120,7 @@ export function FamilyDoughnut({ records, height = '100%', compact }: Props) {
         <div
           ref={tipRef}
           className="pointer-events-none fixed z-[9999]"
-          style={{ left: tipPos.left, top: tipPos.top, opacity: fading ? 0 : 1, transition: 'opacity 0.5s ease-out' }}
+          style={{ left: tipPos.left, top: tipPos.top, ...fadeStyle }}
         >
           <div
             style={{

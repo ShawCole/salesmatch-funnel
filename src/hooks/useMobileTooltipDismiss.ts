@@ -1,37 +1,32 @@
-import { useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 const isMobile = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
 
 /**
- * Returns a ref and onTouchStart handler for a chart container.
- * On touch devices, fades the Recharts tooltip to transparent after 5s
- * but keeps it in the DOM so the next tap can reactivate it.
+ * Hook for mobile tooltip fade. Returns { opacity, style, resetFade }.
+ * - opacity starts at 1, fades to 0 after 4.5s on mobile
+ * - Calling resetFade() restarts the timer (call on new hover/tap)
+ * - On desktop, opacity is always 1
  */
-export function useMobileTooltipDismiss() {
-  const ref = useRef<HTMLDivElement>(null);
+export function useMobileFade() {
+  const [fading, setFading] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  const onTouchStart = useCallback(() => {
-    if (!isMobile) return;
-    const el = ref.current;
-    if (!el) return;
-
-    // Reset opacity immediately on new tap
-    const tooltip = el.querySelector('.recharts-tooltip-wrapper') as HTMLElement | null;
-    if (tooltip) {
-      tooltip.style.transition = 'none';
-      tooltip.style.opacity = '1';
-    }
-
+  const resetFade = () => {
+    setFading(false);
     clearTimeout(timer.current);
-    timer.current = setTimeout(() => {
-      const tip = el.querySelector('.recharts-tooltip-wrapper') as HTMLElement | null;
-      if (tip) {
-        tip.style.transition = 'opacity 0.5s ease-out';
-        tip.style.opacity = '0';
-      }
-    }, 5000);
+    if (isMobile) {
+      timer.current = setTimeout(() => setFading(true), 4500);
+    }
+  };
+
+  useEffect(() => {
+    return () => clearTimeout(timer.current);
   }, []);
 
-  return { ref, onTouchStart };
+  const style = isMobile
+    ? { opacity: fading ? 0 : 1, transition: 'opacity 0.5s ease-out' }
+    : {};
+
+  return { fading, style, resetFade, isMobile };
 }

@@ -1,6 +1,7 @@
 import { useRef, useCallback, useEffect, useState } from 'react';
 import Map, { Source, Layer, type MapRef, type MapLayerMouseEvent } from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import { useMobileFade } from '../hooks/useMobileTooltipDismiss';
 import { useFilters } from '../contexts/FilterContext';
 import { useZipAggregation } from '../hooks/useZipAggregation';
 import { ZIP_TO_COUNTY } from '../utils/zipCounty';
@@ -25,9 +26,7 @@ export function MapView() {
   const [mapReady, setMapReady] = useState(false);
   const [hoveredZip, setHoveredZip] = useState<string | null>(null);
   const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null);
-  const [zipFading, setZipFading] = useState(false);
-  const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const { style: zipFadeStyle, resetFade: resetZipFade, isMobile } = useMobileFade();
 
   // Load GeoJSON and assign stable IDs to each feature
   useEffect(() => {
@@ -105,7 +104,6 @@ export function MapView() {
     : 0;
 
   const clearHover = useCallback(() => {
-    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
     setHoveredZip(null);
     setHoverPos(null);
   }, []);
@@ -127,11 +125,7 @@ export function MapView() {
       const zip = feature.properties?.ZCTA5CE20 || feature.properties?.ZCTA5CE10 || feature.properties?.ZIP;
       setHoveredZip(zip);
       setHoverPos({ x: e.point.x, y: e.point.y });
-      setZipFading(false);
-      if (isMobile) {
-        if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
-        hoverTimerRef.current = setTimeout(() => setZipFading(true), 5000);
-      }
+      resetZipFade();
     } else {
       clearHover();
     }
@@ -305,7 +299,7 @@ export function MapView() {
       {hoveredZip && hoverPos && (
         <div
           className="glass-light rounded-lg px-3 py-2 pointer-events-none absolute z-20"
-          style={{ left: hoverPos.x + 12, top: hoverPos.y - 30, opacity: zipFading ? 0 : 1, transition: 'opacity 0.5s ease-out' }}
+          style={{ left: hoverPos.x + 12, top: hoverPos.y - 30, ...zipFadeStyle }}
         >
           <div className="text-xs font-medium text-white">ZIP {hoveredZip}</div>
           <div className="text-xs text-gray-300">

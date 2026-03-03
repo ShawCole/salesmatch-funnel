@@ -8,7 +8,7 @@ import {
   CartesianGrid,
 } from 'recharts';
 import type { CountItem } from '../../utils/aggregation';
-import { useMobileTooltipDismiss } from '../../hooks/useMobileTooltipDismiss';
+import { ChartTooltip } from './ChartTooltip';
 
 interface Props {
   data: CountItem[];
@@ -36,10 +36,8 @@ function AngledTick({ x, y, payload }: { x: number; y: number; payload: { value:
 }
 
 export function BarChart({ data, color = '#7c3aed', height = '100%', xAxisHeight = 38 }: Props) {
-  const { ref: dismissRef, onTouchStart } = useMobileTooltipDismiss();
   return (
-    <div ref={dismissRef} onTouchStart={onTouchStart} style={{ width: '100%', height }}>
-    <ResponsiveContainer width="100%" height="100%">
+    <ResponsiveContainer width="100%" height={height as number | `${number}%`}>
       <RechartsBarChart data={data} margin={{ top: 4, right: 4, bottom: 17, left: 0 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" vertical={false} />
         <XAxis
@@ -58,13 +56,7 @@ export function BarChart({ data, color = '#7c3aed', height = '100%', xAxisHeight
           tickFormatter={(v: number) => v.toLocaleString()}
         />
         <Tooltip
-          contentStyle={{
-            background: 'rgba(17,24,39,0.95)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: 8,
-            color: '#f3f4f6',
-            fontSize: 12,
-          }}
+          content={<ChartTooltip />}
           cursor={{ fill: 'rgba(255,255,255,0.04)' }}
         />
         <Bar
@@ -75,6 +67,5 @@ export function BarChart({ data, color = '#7c3aed', height = '100%', xAxisHeight
         />
       </RechartsBarChart>
     </ResponsiveContainer>
-    </div>
   );
 }

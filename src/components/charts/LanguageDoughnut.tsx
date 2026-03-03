@@ -1,7 +1,8 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { useTooltipFlip } from '../../hooks/useTooltipFlip';
+import { useMobileFade } from '../../hooks/useMobileTooltipDismiss';
 import type { LangSegment } from '../cards/LanguageCard';
 
 interface Props {
@@ -15,33 +16,27 @@ export function LanguageDoughnut({ segments, totalCount: _totalCount, height = '
   const total = segments.reduce((s, seg) => s + seg.value, 0) || 1;
 
   const [hover, setHover] = useState<{ name: string; value: number } | null>(null);
-  const [fading, setFading] = useState(false);
   const [mouse, setMouse] = useState({ x: 0, y: 0 });
   const { ref: tipRef, getStyle } = useTooltipFlip();
-  const fadeTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const isMobile = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
-
-  useEffect(() => {
-    if (hover && isMobile) {
-      setFading(false);
-      fadeTimer.current = setTimeout(() => setFading(true), 5000);
-      return () => clearTimeout(fadeTimer.current);
-    }
-  }, [hover, isMobile]);
+  const { style: fadeStyle, resetFade, isMobile } = useMobileFade();
 
   const onMouseMove = useCallback((e: React.MouseEvent) => {
     setMouse({ x: e.clientX, y: e.clientY });
   }, []);
 
   const onEnter = useCallback((_: unknown, index: number) => {
-    setFading(false);
+    resetFade();
     setHover(segments[index]);
   }, [segments]);
+
+  const onLeave = useCallback(() => {
+    if (!isMobile) setHover(null);
+  }, [isMobile]);
 
   const tipPos = hover ? getStyle(mouse.x, mouse.y) : { left: 0, top: 0 };
 
   return (
-    <div style={{ width: '100%', height, position: 'relative' }} onMouseMove={onMouseMove} onMouseLeave={() => setHover(null)}>
+    <div style={{ width: '100%', height, position: 'relative' }} onMouseMove={onMouseMove} onMouseLeave={onLeave}>
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie
@@ -55,7 +50,7 @@ export function LanguageDoughnut({ segments, totalCount: _totalCount, height = '
             animationDuration={300}
             stroke="none"
             onMouseEnter={onEnter}
-            onMouseLeave={() => setHover(null)}
+            onMouseLeave={onLeave}
           >
             {segments.map((s, i) => (
               <Cell key={i} fill={s.fill} style={{ cursor: 'default' }} />
@@ -68,7 +63,7 @@ export function LanguageDoughnut({ segments, totalCount: _totalCount, height = '
         <div
           ref={tipRef}
           className="pointer-events-none fixed z-[9999]"
-          style={{ left: tipPos.left, top: tipPos.top, opacity: fading ? 0 : 1, transition: 'opacity 0.5s ease-out' }}
+          style={{ left: tipPos.left, top: tipPos.top, ...fadeStyle }}
         >
           <div
             style={{
