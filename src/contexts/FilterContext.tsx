@@ -1,7 +1,8 @@
-import { createContext, useContext, useReducer, useMemo, type ReactNode } from 'react';
+import { createContext, useContext, useReducer, useMemo, useEffect, type ReactNode } from 'react';
 import type { IntentRecord, MultiSelectFilter } from '../types/record';
 import allRecords from '../data/records.json';
 import { ZIP_TO_COUNTY } from '../utils/zipCounty';
+import { searchParamsToFilters, syncFiltersToURL } from '../utils/urlFilters';
 
 const records = allRecords as unknown as IntentRecord[];
 
@@ -36,7 +37,7 @@ type Action =
   | { type: 'CLEAR_EXCLUDED_ZIPS' }
   | { type: 'CLEAR_ALL' };
 
-function buildInitialState(): FilterState {
+function buildEmptyState(): FilterState {
   return {
     homeValueTabs: new Set(),
     ageRange: emptyFilter(),
@@ -51,6 +52,12 @@ function buildInitialState(): FilterState {
     selectedZips: new Set(),
     excludedZips: new Set(),
   };
+}
+
+function buildInitialState(): FilterState {
+  // Hydrate from URL params if present
+  const fromURL = searchParamsToFilters(window.location.search);
+  return fromURL ?? buildEmptyState();
 }
 
 const initialState = buildInitialState();
@@ -94,7 +101,7 @@ function reducer(state: FilterState, action: Action): FilterState {
     case 'CLEAR_EXCLUDED_ZIPS':
       return { ...state, excludedZips: new Set() };
     case 'CLEAR_ALL':
-      return buildInitialState();
+      return buildEmptyState();
     default:
       return state;
   }
@@ -144,6 +151,11 @@ const FilterContext = createContext<FilterContextValue>(null!);
 
 export function FilterProvider({ children }: { children: ReactNode }) {
   const [filters, dispatch] = useReducer(reducer, initialState);
+
+  // Sync filter state → URL bar on every change
+  useEffect(() => {
+    syncFiltersToURL(filters);
+  }, [filters]);
 
   // Stage 0: demographic filters only (no area filters: county, city, ZIPs)
   // Used for map tooltip counts — every ZIP shows how many records survive non-area filters

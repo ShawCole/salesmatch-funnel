@@ -8,12 +8,47 @@ import { ZIP_TO_COUNTY } from '../utils/zipCounty';
 
 const TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
-// CA center
+// Fallback center for CA (used before fitBounds runs)
 const INITIAL_VIEW = {
   longitude: -119.4,
   latitude: 37.2,
   zoom: 5.8,
 };
+
+/** Compute the bounding box of GeoJSON features matching a set of ZIP codes */
+function computeZipBounds(
+  geojson: GeoJSON.FeatureCollection,
+  zipsWithData: Set<string>,
+): [number, number, number, number] | null {
+  let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
+  let found = false;
+
+  for (const feature of geojson.features) {
+    const zip = String(
+      feature.properties?.ZCTA5CE20 || feature.properties?.ZCTA5CE10 || feature.properties?.ZIP || '',
+    ).padStart(5, '0');
+    if (!zipsWithData.has(zip)) continue;
+
+    // Walk all coordinates in the geometry to find bounds
+    const walkCoords = (coords: any) => {
+      if (typeof coords[0] === 'number') {
+        // [lng, lat]
+        const lng = coords[0] as number;
+        const lat = coords[1] as number;
+        if (lng < minLng) minLng = lng;
+        if (lng > maxLng) maxLng = lng;
+        if (lat < minLat) minLat = lat;
+        if (lat > maxLat) maxLat = lat;
+        found = true;
+      } else {
+        for (const c of coords) walkCoords(c);
+      }
+    };
+    walkCoords((feature.geometry as any).coordinates);
+  }
+
+  return found ? [minLng, minLat, maxLng, maxLat] : null;
+}
 
 export function MapView() {
   const mapRef = useRef<MapRef>(null);
@@ -27,6 +62,7 @@ export function MapView() {
   const [hoveredZip, setHoveredZip] = useState<string | null>(null);
   const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null);
   const { style: zipFadeStyle, resetFade: resetZipFade, isMobile } = useMobileFade();
+  const didInitialFit = useRef(false);
 
   // Load GeoJSON and assign stable IDs to each feature
   useEffect(() => {
@@ -93,6 +129,44 @@ export function MapView() {
       map.off('idle', onIdle);
     };
   }, [applyFeatureStates, mapReady]);
+
+  // Auto-zoom on initial load: fit map to ZIPs with data, accounting for UI overlays
+  useEffect(() => {
+    if (didInitialFit.current) return;
+    if (!mapReady || !geojson || geojson.features.length === 0) return;
+
+    const map = mapRef.current?.getMap();
+    if (!map) return;
+
+    // Determine which ZIPs to fit: filtered data if URL had filters, otherwise all data
+    const targetCounts = zipCounts.size > 0 ? zipCounts : allZipCounts;
+    if (targetCounts.size === 0) return;
+
+    const zipsWithData = new Set<string>();
+    for (const [zip, count] of targetCounts) {
+      if (count > 0) zipsWithData.add(zip);
+    }
+    if (zipsWithData.size === 0) return;
+
+    const bounds = computeZipBounds(geojson, zipsWithData);
+    if (!bounds) return;
+
+    didInitialFit.current = true;
+
+    const mobile = window.innerWidth < 768;
+
+    // Padding accounts for UI overlays:
+    // Desktop: filter bar top (~120px), charts left (~45%), stats right (~220px)
+    // Mobile: filter bar top (~180px), chart panel bottom (~320px)
+    const padding = mobile
+      ? { top: 200, bottom: 340, left: 20, right: 20 }
+      : { top: 60, bottom: 50, left: Math.round(window.innerWidth * 0.60), right: 160 };
+
+    map.fitBounds(
+      [[bounds[0], bounds[1]], [bounds[2], bounds[3]]],
+      { padding, duration: 800, maxZoom: 14 },
+    );
+  }, [mapReady, geojson, zipCounts, allZipCounts]);
 
   // Derive hover data from current state — always fresh, no stale values after clicks
   const hoveredZipStr = hoveredZip ? String(hoveredZip).padStart(5, '0') : null;
