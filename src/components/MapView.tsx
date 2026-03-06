@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect, useState } from 'react';
+import { useRef, useCallback, useEffect, useState, useMemo } from 'react';
 import Map, { Source, Layer, type MapRef, type MapLayerMouseEvent } from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useMobileFade } from '../hooks/useMobileTooltipDismiss';
@@ -130,9 +130,22 @@ export function MapView({ mobilePanelOpen }: { mobilePanelOpen?: boolean }) {
   }, [applyFeatureStates, mapReady]);
 
   // Auto-zoom whenever the visible ZIP set or mobile panel state changes
+  // Suppressed only for the immediate effect of a manual ZIP click (not filter changes)
   const prevFitKey = useRef<string>('');
+  const skipNextFit = useRef(false);
   useEffect(() => {
     if (!mapReady || !geojson || geojson.features.length === 0) return;
+
+    if (skipNextFit.current) {
+      skipNextFit.current = false;
+      // Still update the key so future filter changes detect correctly
+      const targetCounts = zipCounts.size > 0 ? zipCounts : allZipCounts;
+      const zips: string[] = [];
+      for (const [zip, count] of targetCounts) { if (count > 0) zips.push(zip); }
+      const mobile = window.innerWidth < 768;
+      prevFitKey.current = zips.sort().join(',') + (mobile ? `|panel=${mobilePanelOpen}` : '');
+      return;
+    }
 
     const map = mapRef.current?.getMap();
     if (!map) return;
@@ -207,6 +220,24 @@ export function MapView({ mobilePanelOpen }: { mobilePanelOpen?: boolean }) {
     }
   }, [clearHover, isMobile]);
 
+  // Build ZIP → city set lookup from all records (for city-aware click behavior)
+  // Note: use globalThis.Map to avoid collision with react-map-gl's Map component
+  const zipToCities = useMemo(() => {
+    const lookup = new globalThis.Map<string, Set<string>>();
+    for (const r of allRecords) {
+      const zip = r.SKIPTRACE_ZIP;
+      const city = r.PERSONAL_CITY;
+      if (!zip || !city) continue;
+      const normalized = city.toLowerCase().split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      if (!lookup.has(zip)) lookup.set(zip, new Set());
+      lookup.get(zip)!.add(normalized);
+    }
+    return lookup;
+  }, [allRecords]);
+
+  const hasGeoFilter = filters.county.include.size > 0 || filters.county.exclude.size > 0
+    || filters.city.include.size > 0 || filters.city.exclude.size > 0;
+
   const onClick = useCallback((e: MapLayerMouseEvent) => {
     const feature = e.features?.[0];
     if (feature) {
@@ -223,35 +254,71 @@ export function MapView({ mobilePanelOpen }: { mobilePanelOpen?: boolean }) {
 
         // If already excluded, un-exclude it
         if (isExcluded) {
+          skipNextFit.current = true;
           dispatch({ type: 'TOGGLE_EXCLUDE_ZIP', zip: zipStr });
           return;
         }
 
         // If already selected (as additional ZIP), deselect it
         if (isSelected) {
+          skipNextFit.current = true;
           dispatch({ type: 'TOGGLE_ZIP', zip: zipStr });
           return;
         }
 
-        // When a county is included...
-        if (filters.county.include.size > 0) {
-          const county = ZIP_TO_COUNTY[zipStr];
-          if (county && filters.county.include.has(county)) {
-            // ZIP is inside the included county — exclude it
+        // When location filters are active (county or city)...
+        if (hasGeoFilter) {
+          const demoCount = demoZipCounts.get(zipStr) || 0;
+          const county = ZIP_TO_COUNTY[zipStr] || '';
+          const cities = zipToCities.get(zipStr);
+
+          // Check if ZIP is excluded by a geo exclude filter
+          let isGeoExcluded = false;
+          if (filters.county.exclude.size > 0 && county && filters.county.exclude.has(county)) isGeoExcluded = true;
+          if (!isGeoExcluded && filters.city.exclude.size > 0 && cities) {
+            for (const city of cities) {
+              if (filters.city.exclude.has(city)) { isGeoExcluded = true; break; }
+            }
+          }
+
+          // If ZIP is geo-excluded but has demographic data, allow adding it back
+          if (isGeoExcluded && demoCount > 0) {
+            skipNextFit.current = true;
+            dispatch({ type: 'TOGGLE_ZIP', zip: zipStr });
+            return;
+          }
+
+          // Check if ZIP is inside any included geo (OR logic)
+          let isInsideGeo = false;
+          if (filters.county.include.size > 0 && county && filters.county.include.has(county)) isInsideGeo = true;
+          if (!isInsideGeo && filters.city.include.size > 0 && cities) {
+            for (const city of cities) {
+              if (filters.city.include.has(city)) { isInsideGeo = true; break; }
+            }
+          }
+
+          // If no include filters, check if ZIP is in the base set (exclude-only geo filters)
+          if (filters.county.include.size === 0 && filters.city.include.size === 0) {
+            isInsideGeo = baseCount > 0;
+          }
+
+          if (isInsideGeo) {
+            skipNextFit.current = true;
             dispatch({ type: 'TOGGLE_EXCLUDE_ZIP', zip: zipStr });
-          } else {
-            // ZIP is outside the included county — add it as additional selection
+          } else if (demoCount > 0) {
+            skipNextFit.current = true;
             dispatch({ type: 'TOGGLE_ZIP', zip: zipStr });
           }
           return;
         }
 
-        // No county active — only allow clicks on ZIPs with base records
+        // No geo filters active — only allow clicks on ZIPs with base records
         if (baseCount === 0) return;
+        skipNextFit.current = true;
         dispatch({ type: 'TOGGLE_ZIP', zip: zipStr });
       }
     }
-  }, [dispatch, baseZipCounts, allZipCounts, filters.excludedZips, filters.selectedZips, filters.county.include]);
+  }, [dispatch, baseZipCounts, demoZipCounts, allZipCounts, filters.excludedZips, filters.selectedZips, filters.county, filters.city, hasGeoFilter, zipToCities]);
 
   return (
     <div className="absolute inset-0">

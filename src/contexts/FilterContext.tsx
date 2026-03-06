@@ -177,29 +177,42 @@ export function FilterProvider({ children }: { children: ReactNode }) {
 
   // Stage 1: all filters EXCEPT selectedZips and excludedZips
   // Used for map clickability — shows what each ZIP would have before manual ZIP selection
+  // Geo filters (county + city) use OR logic: record passes if it matches ANY included county OR ANY included city
+  // Geo excludes always win: if a record's county or city is excluded, it's out regardless of includes
   const baseFilteredRecords = useMemo(() => {
+    const hasGeoInclude = filters.county.include.size > 0 || filters.city.include.size > 0;
+    const hasGeoExclude = filters.county.exclude.size > 0 || filters.city.exclude.size > 0;
+    const hasGeoFilter = hasGeoInclude || hasGeoExclude;
+
     return records.filter(r => {
       if (filters.homeValueTabs.size > 0 && !filters.homeValueTabs.has(r.HOME_VALUE_TAB)) {
         return false;
       }
 
-      // County filter uses ZIP_TO_COUNTY lookup
-      const countyFilter = filters.county;
-      if (countyFilter.include.size > 0 || countyFilter.exclude.size > 0) {
+      // Combined geo filter: county and city as OR with excludes-always-win
+      if (hasGeoFilter) {
         const county = ZIP_TO_COUNTY[r.SKIPTRACE_ZIP] || '';
-        if (!applyMultiFilter(countyFilter, county)) return false;
+        const city = toTitleCase(r.PERSONAL_CITY || '');
+
+        // Excludes always win — check first
+        if (filters.county.exclude.size > 0 && county && filters.county.exclude.has(county)) return false;
+        if (filters.city.exclude.size > 0 && city && filters.city.exclude.has(city)) return false;
+
+        // If there are includes, record must match at least one (OR logic)
+        if (hasGeoInclude) {
+          const matchesCounty = filters.county.include.size > 0 && county && filters.county.include.has(county);
+          const matchesCity = filters.city.include.size > 0 && city && filters.city.include.has(city);
+          if (!matchesCounty && !matchesCity) return false;
+        }
       }
 
-      // All other multi-select filters
+      // All other non-geo multi-select filters
       for (const [filterKey, field] of Object.entries(FIELD_MAP)) {
-        if (filterKey === 'county') continue; // handled above
+        if (filterKey === 'county' || filterKey === 'city') continue; // handled above
         const mf = filters[filterKey as MultiSelectKey];
         if (mf.include.size === 0 && mf.exclude.size === 0) continue;
 
-        let val = r[field] || '';
-        // Normalize city to title case for comparison
-        if (filterKey === 'city') val = toTitleCase(val);
-
+        const val = r[field] || '';
         if (!applyMultiFilter(mf, val)) return false;
       }
       return true;
