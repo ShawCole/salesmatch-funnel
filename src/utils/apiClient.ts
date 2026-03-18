@@ -46,6 +46,10 @@ export function filtersToQueryParams(filters: FilterState): string {
     if (f.exclude.size > 0) params.set(param + '_x', [...f.exclude].join(','));
   }
 
+  // ZIP selections (hierarchical override — see backend buildDashboardWhere)
+  if (filters.selectedZips.size > 0) params.set('zips', [...filters.selectedZips].join(','));
+  if (filters.excludedZips.size > 0) params.set('xzips', [...filters.excludedZips].join(','));
+
   return params.toString();
 }
 

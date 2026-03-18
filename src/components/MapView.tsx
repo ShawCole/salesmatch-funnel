@@ -98,7 +98,7 @@ export function MapView({ mobilePanelOpen }: { mobilePanelOpen?: boolean }) {
   useRenderPerf('MapView');
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
-  const { apiData, loading } = useFilters();
+  const { apiData, loading, filters, dispatch } = useFilters();
   const [mapReady, setMapReady] = useState(false);
   const [hoveredFeature, setHoveredFeature] = useState<{ name: string; count: number; type: 'county' | 'zip' } | null>(null);
   const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null);
@@ -256,6 +256,48 @@ export function MapView({ mobilePanelOpen }: { mobilePanelOpen?: boolean }) {
             7, 0,
             9, 1,
           ] as any,
+        },
+      });
+
+      // Selected ZIP highlight — bright cyan outline
+      map.addLayer({
+        id: 'zcta-selected',
+        type: 'line',
+        source: 'zctas',
+        'source-layer': 'zctas',
+        minzoom: 7,
+        paint: {
+          'line-color': '#22d3ee',
+          'line-width': ['case', ['==', ['coalesce', ['feature-state', 'selected'], 0], 1], 2.5, 0] as any,
+          'line-opacity': ['interpolate', ['linear'], ['zoom'], 7, 0, 9, 1] as any,
+        },
+      });
+
+      // Excluded ZIP overlay — dimmed red outline + darkened fill
+      map.addLayer({
+        id: 'zcta-excluded-fill',
+        type: 'fill',
+        source: 'zctas',
+        'source-layer': 'zctas',
+        minzoom: 7,
+        paint: {
+          'fill-color': 'rgba(0,0,0,0.6)',
+          'fill-opacity': ['case', ['==', ['coalesce', ['feature-state', 'excluded'], 0], 1],
+            ['interpolate', ['linear'], ['zoom'], 7, 0, 9, 0.6] as any,
+            0,
+          ] as any,
+        },
+      });
+      map.addLayer({
+        id: 'zcta-excluded-outline',
+        type: 'line',
+        source: 'zctas',
+        'source-layer': 'zctas',
+        minzoom: 7,
+        paint: {
+          'line-color': '#ef4444',
+          'line-width': ['case', ['==', ['coalesce', ['feature-state', 'excluded'], 0], 1], 2, 0] as any,
+          'line-opacity': ['interpolate', ['linear'], ['zoom'], 7, 0, 9, 0.8] as any,
         },
       });
 
@@ -445,6 +487,34 @@ export function MapView({ mobilePanelOpen }: { mobilePanelOpen?: boolean }) {
     return () => { map.off('moveend', onMoveEnd); };
   }, [mapReady]);
 
+  // Apply selected/excluded ZIP visual states
+  const prevSelectedRef = useRef<Set<string>>(new Set());
+  const prevExcludedRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+
+    // Clear previous selected states
+    for (const id of prevSelectedRef.current) {
+      try { map.setFeatureState({ source: 'zctas', sourceLayer: 'zctas', id }, { selected: 0 }); } catch { /* */ }
+    }
+    for (const id of prevExcludedRef.current) {
+      try { map.setFeatureState({ source: 'zctas', sourceLayer: 'zctas', id }, { excluded: 0 }); } catch { /* */ }
+    }
+
+    // Apply new states
+    for (const zip of filters.selectedZips) {
+      try { map.setFeatureState({ source: 'zctas', sourceLayer: 'zctas', id: zip }, { selected: 1 }); } catch { /* */ }
+    }
+    for (const zip of filters.excludedZips) {
+      try { map.setFeatureState({ source: 'zctas', sourceLayer: 'zctas', id: zip }, { excluded: 1 }); } catch { /* */ }
+    }
+
+    prevSelectedRef.current = new Set(filters.selectedZips);
+    prevExcludedRef.current = new Set(filters.excludedZips);
+  }, [mapReady, filters.selectedZips, filters.excludedZips]);
+
   // Hover handling
   useEffect(() => {
     const map = mapRef.current;
@@ -508,11 +578,27 @@ export function MapView({ mobilePanelOpen }: { mobilePanelOpen?: boolean }) {
       map.getCanvas().style.cursor = 'grab';
     };
 
-    const onClick = (e: maplibregl.MapMouseEvent) => {
+    const onClick = (e: maplibregl.MapMouseEvent & { originalEvent: MouseEvent }) => {
       const zoom = map.getZoom();
       const point = e.point;
 
-      // Click county to zoom in
+      // ZIP click — select or exclude
+      if (zoom >= 9) {
+        const zctaFeatures = map.queryRenderedFeatures(point, { layers: ['zcta-fill'] });
+        if (zctaFeatures.length > 0) {
+          const zip = zctaFeatures[0].properties?.GEOID20;
+          if (zip) {
+            if (e.originalEvent.shiftKey) {
+              dispatch({ type: 'TOGGLE_EXCLUDE_ZIP', zip });
+            } else {
+              dispatch({ type: 'TOGGLE_ZIP', zip });
+            }
+            return;
+          }
+        }
+      }
+
+      // County click — zoom in
       if (zoom < 10) {
         const countyFeatures = map.queryRenderedFeatures(point, { layers: ['county-fill'] });
         if (countyFeatures.length > 0) {
@@ -559,7 +645,7 @@ export function MapView({ mobilePanelOpen }: { mobilePanelOpen?: boolean }) {
       window.removeEventListener('card-hover-start', clearHandler);
       window.removeEventListener('chart-panel-enter', clearHandler);
     };
-  }, [mapReady, countyMap, zipMap, resetFade]);
+  }, [mapReady, countyMap, zipMap, resetFade, dispatch]);
 
   return (
     <div className="absolute inset-0">
