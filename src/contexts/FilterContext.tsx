@@ -206,6 +206,8 @@ export function FilterProvider({ children }: { children: ReactNode }) {
   // Re-aggregate when filters change
   const filterKey = serializeFilters(filters);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const filtersRef = useRef(filters);
+  filtersRef.current = filters;
 
   useEffect(() => {
     if (rawRecords.current.length === 0) return;
@@ -214,10 +216,19 @@ export function FilterProvider({ children }: { children: ReactNode }) {
 
     setLoading(true);
     debounceRef.current = setTimeout(() => {
-      const result = aggregateRecords(rawRecords.current, filters);
-      setApiData(result);
-      setLoading(false);
-    }, 150);
+      // Use rAF to guarantee spinner paints before heavy aggregation blocks
+      requestAnimationFrame(() => {
+        const start = performance.now();
+        const result = aggregateRecords(rawRecords.current, filtersRef.current);
+        const elapsed = performance.now() - start;
+        // Ensure spinner shows for at least 300ms total
+        const remaining = Math.max(0, 300 - elapsed);
+        setTimeout(() => {
+          setApiData(result);
+          setLoading(false);
+        }, remaining);
+      });
+    }, 100);
 
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
