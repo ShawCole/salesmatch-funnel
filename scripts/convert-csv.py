@@ -17,8 +17,9 @@ def load_lookup():
         data = json.load(f)
     return data['centroids'], data['counties']
 
-def get_zip(row):
-    z = (row.get('PERSONAL_ZIP') or row.get('SKIPTRACE_ZIP') or '').strip()
+def get_skip_zip(row):
+    """Use SKIPTRACE_ZIP only — no coalescing with personal ZIP."""
+    z = (row.get('SKIPTRACE_ZIP') or '').strip()
     if z:
         z = z.split('.')[0].split('-')[0].strip().zfill(5)
         if len(z) == 5 and z.isdigit():
@@ -33,11 +34,12 @@ def convert_csv(path, centroids, zip2fips):
     with open(path, 'r', errors='replace') as f:
         reader = csv.DictReader(f)
         for row in reader:
-            z = get_zip(row)
-            st = (row.get('PERSONAL_STATE') or row.get('SKIPTRACE_STATE') or '').strip().upper()
+            # Skiptrace-only for geo (state, zip, city) — no mixing sources
+            z = get_skip_zip(row)
+            st = (row.get('SKIPTRACE_STATE') or '').strip().upper()
             if not st or len(st) != 2:
                 st = ''
-            city = (row.get('PERSONAL_CITY') or row.get('SKIPTRACE_CITY') or '').strip()
+            city = (row.get('SKIPTRACE_CITY') or '').strip()
             age = (row.get('AGE_RANGE') or '').strip()
             gender = (row.get('GENDER') or '').strip().upper()
             if gender not in ('M', 'F'):
