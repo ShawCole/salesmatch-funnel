@@ -2,6 +2,7 @@ import { createContext, useContext, useReducer, useMemo, useEffect, useRef, useS
 import type { MultiSelectFilter } from '../types/record';
 import type { DashboardResponse } from '../types/dashboard';
 import { searchParamsToFilters, syncFiltersToURL } from '../utils/urlFilters';
+import { aggregateRecords, type CompactRecord } from '../utils/clientAggregation';
 
 function emptyFilter(): MultiSelectFilter {
   return { include: new Set(), exclude: new Set() };
@@ -154,102 +155,74 @@ const FilterContext = createContext<FilterContextValue>(null!);
 export function FilterProvider({ children }: { children: ReactNode }) {
   const [filters, dispatch] = useReducer(reducer, initialState);
   const [apiData, setApiData] = useState<DashboardResponse | null>(null);
-  const [fullData, setFullData] = useState<DashboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [dataset, setDatasetRaw] = useState<DatasetKey>(() => {
     const params = new URLSearchParams(window.location.search);
     return (params.get('dataset') as DatasetKey) || 'sales_revenue';
   });
   const topics: Topic[] = [];
-  const cache = useRef<Partial<Record<DatasetKey, DashboardResponse>>>({});
+  const recordCache = useRef<Partial<Record<DatasetKey, CompactRecord[]>>>({});
+  const rawRecords = useRef<CompactRecord[]>([]);
 
   const setDataset = useCallback((key: DatasetKey) => {
     setDatasetRaw(key);
-    // Reset filters when switching dataset
     dispatch({ type: 'CLEAR_ALL' });
-    // Update URL
     const url = new URL(window.location.href);
     url.searchParams.set('dataset', key);
     window.history.replaceState({}, '', url.toString());
   }, []);
 
-  // Load static JSON when dataset changes
+  // Load raw records when dataset changes
   useEffect(() => {
-    const cached = cache.current[dataset];
+    const cached = recordCache.current[dataset];
     if (cached) {
-      setFullData(cached);
-      setApiData(cached);
-      setLoading(false);
+      rawRecords.current = cached;
+      setLoading(true);
+      // Use requestAnimationFrame to show loading spinner before heavy aggregation
+      requestAnimationFrame(() => {
+        const result = aggregateRecords(cached, filters);
+        setApiData(result);
+        setLoading(false);
+      });
       return;
     }
 
     setLoading(true);
     fetch(DATASET_URLS[dataset])
       .then(r => r.json())
-      .then((data: DashboardResponse) => {
-        cache.current[dataset] = data;
-        setFullData(data);
-        setApiData(data);
+      .then((records: CompactRecord[]) => {
+        recordCache.current[dataset] = records;
+        rawRecords.current = records;
+        const result = aggregateRecords(records, filters);
+        setApiData(result);
         setLoading(false);
       })
       .catch(err => {
         console.error('Failed to load dataset:', err);
         setLoading(false);
       });
-  }, [dataset]);
+  }, [dataset]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Client-side filtering when filters change
+  // Re-aggregate when filters change
   const filterKey = serializeFilters(filters);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (!fullData) return;
+    if (rawRecords.current.length === 0) return;
 
-    // Check if any filters are active
-    const hasFilters = filters.state.include.size > 0 || filters.state.exclude.size > 0 ||
-      filters.city.include.size > 0 || filters.ageRange.include.size > 0 ||
-      filters.gender.include.size > 0 || filters.incomeRange.include.size > 0 ||
-      filters.netWorth.include.size > 0 || filters.creditRating.include.size > 0 ||
-      filters.seniorityLevel.include.size > 0 || filters.homeowner.include.size > 0 ||
-      filters.language.include.size > 0 || filters.selectedZips.size > 0 ||
-      filters.excludedZips.size > 0;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
 
-    if (!hasFilters) {
-      setApiData(fullData);
-      return;
-    }
+    setLoading(true);
+    debounceRef.current = setTimeout(() => {
+      const result = aggregateRecords(rawRecords.current, filters);
+      setApiData(result);
+      setLoading(false);
+    }, 150);
 
-    // Apply geo filters client-side (state, city, zip)
-    let filteredCounties = fullData.geo.counties;
-    let filteredZips = fullData.geo.zips;
-
-    if (filters.state.include.size > 0) {
-      const states = filters.state.include;
-      filteredCounties = filteredCounties.filter(c => states.has(c.state));
-      filteredZips = filteredZips.filter(z => states.has(z.state));
-    }
-    if (filters.state.exclude.size > 0) {
-      const states = filters.state.exclude;
-      filteredCounties = filteredCounties.filter(c => !states.has(c.state));
-      filteredZips = filteredZips.filter(z => !states.has(z.state));
-    }
-    if (filters.selectedZips.size > 0) {
-      filteredZips = filteredZips.filter(z => filters.selectedZips.has(z.zip));
-      const zipFips = new Set(filteredZips.map(z => z.county_fips));
-      filteredCounties = filteredCounties.filter(c => zipFips.has(c.fips));
-    }
-    if (filters.excludedZips.size > 0) {
-      filteredZips = filteredZips.filter(z => !filters.excludedZips.has(z.zip));
-    }
-
-    const filteredTotal = filteredZips.reduce((sum, z) => sum + z.total, 0) || fullData.filteredContacts;
-
-    setApiData({
-      ...fullData,
-      filteredContacts: filteredTotal,
-      geo: { counties: filteredCounties, zips: filteredZips },
-      tooltipGeo: { counties: fullData.geo.counties, zips: fullData.geo.zips },
-    });
-  }, [filterKey, fullData]); // eslint-disable-line react-hooks/exhaustive-deps
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [filterKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Sync filter state → URL bar
   useEffect(() => {

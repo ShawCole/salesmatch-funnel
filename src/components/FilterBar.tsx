@@ -1,8 +1,9 @@
 import { useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import { useFilters, type MultiSelectKey, type DatasetKey } from '../contexts/FilterContext';
-import { AGE_RANGE_ORDER, AGE_RANGE_LABELS, GENDER_ORDER, INCOME_RANGE_ORDER, INCOME_RANGE_LABELS, NET_WORTH_ORDER, NET_WORTH_LABELS, CREDIT_RATING_ORDER, CREDIT_RATING_LABELS, SENIORITY_ORDER, SENIORITY_LABELS, LANGUAGE_CODE_LABELS } from '../utils/constants';
+import { AGE_RANGE_ORDER, AGE_RANGE_LABELS, GENDER_ORDER, INCOME_RANGE_ORDER, INCOME_RANGE_LABELS, NET_WORTH_ORDER, NET_WORTH_LABELS, CREDIT_RATING_ORDER, CREDIT_RATING_LABELS, LANGUAGE_CODE_LABELS } from '../utils/constants';
 import { X, Copy, Check, ChevronDown } from 'lucide-react';
 import { MultiSelectPopover } from './MultiSelectPopover';
+import { SingleSelectPopover } from './SingleSelectPopover';
 
 function ZipChipGroup({
   zips,
@@ -258,7 +259,6 @@ export function FilterBar({ onCollapseChange }: { onCollapseChange?: (collapsed:
     { key: 'county', label: 'County', labelMap: countyLabelMap },
     { key: 'city', label: 'City' },
     { key: 'language', label: 'Language', labelMap: LANGUAGE_CODE_LABELS },
-    { key: 'seniorityLevel', label: 'Seniority', labelMap: SENIORITY_LABELS },
     { key: 'state', label: 'State' },
   ];
 
@@ -304,25 +304,10 @@ export function FilterBar({ onCollapseChange }: { onCollapseChange?: (collapsed:
         {/* Title + dataset switcher + collapse toggle */}
         <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-white font-bold text-lg leading-tight whitespace-nowrap">
-              <span className="text-purple-400">Sales Match</span> Audience Explorer
+            <h1 className="text-white font-bold text-sm sm:text-base leading-tight">
+              CXOs in Orgs with {sizing === 'revenue' ? 'Est. Revenue between $1m-$25m' : 'Headcount between 1-250'}{' '}
+              <span className="text-purple-400">Spiking in intent to hire {offer === 'sales' ? 'Sales People' : 'Customer Success Managers'}</span>
             </h1>
-            <select
-              value={offer}
-              onChange={e => handleOfferChange(e.target.value)}
-              className="appearance-none bg-white/5 border border-white/10 rounded-lg text-white text-xs font-medium px-2.5 py-1.5 cursor-pointer outline-none hover:border-white/20 focus:border-purple-500 transition-colors"
-            >
-              <option value="sales">Sales Hiring</option>
-              <option value="csm">CSM Hiring</option>
-            </select>
-            <select
-              value={sizing}
-              onChange={e => handleSizingChange(e.target.value)}
-              className="appearance-none bg-white/5 border border-white/10 rounded-lg text-white text-xs font-medium px-2.5 py-1.5 cursor-pointer outline-none hover:border-white/20 focus:border-purple-500 transition-colors"
-            >
-              <option value="revenue">Revenue $1M–$25M</option>
-              <option value="headcount">Headcount 1–250</option>
-            </select>
           </div>
           <button
             onClick={() => setFiltersOpen(prev => !prev)}
@@ -336,6 +321,22 @@ export function FilterBar({ onCollapseChange }: { onCollapseChange?: (collapsed:
         <div className={`overflow-hidden transition-all duration-300 ${filtersOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
         {/* Multi-select popovers */}
         <div className="flex items-center gap-2 flex-wrap">
+          {/* Dataset toggles */}
+          <SingleSelectPopover
+            label="Offer"
+            options={['sales', 'csm']}
+            labelMap={{ sales: 'Sales Hiring', csm: 'CSM Hiring' }}
+            value={offer}
+            onChange={handleOfferChange}
+          />
+          <SingleSelectPopover
+            label="Company Size"
+            options={['revenue', 'headcount']}
+            labelMap={{ revenue: 'Revenue $1M–$25M', headcount: 'Headcount 1–250' }}
+            value={sizing}
+            onChange={handleSizingChange}
+          />
+          <div className="w-px h-5 bg-white/10" />
           <MultiSelectPopover
             label={isMobile ? 'Age' : 'Age Range'}
             options={AGE_RANGE_ORDER}
@@ -405,14 +406,6 @@ export function FilterBar({ onCollapseChange }: { onCollapseChange?: (collapsed:
             filter={filters.language}
             onToggle={handleToggle('language')}
             onClear={handleClear('language')}
-          />
-          <MultiSelectPopover
-            label="Seniority"
-            options={SENIORITY_ORDER}
-            labelMap={SENIORITY_LABELS}
-            filter={filters.seniorityLevel}
-            onToggle={handleToggle('seniorityLevel')}
-            onClear={handleClear('seniorityLevel')}
           />
           <MultiSelectPopover
             label="Homeowner"

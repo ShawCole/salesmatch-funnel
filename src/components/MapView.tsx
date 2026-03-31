@@ -212,19 +212,19 @@ export function MapView({ mobilePanelOpen }: { mobilePanelOpen?: boolean }) {
         },
       });
 
-      // County fill — visible at low zoom, fades out z6→z7
+      // County fill — visible at low zoom, fades out z5→z6
       map.addLayer({
         id: 'county-fill',
         type: 'fill',
         source: 'counties',
         'source-layer': 'counties',
-        maxzoom: 8,
+        maxzoom: 7,
         paint: {
           'fill-color': FILL_COLOR as any,
           'fill-opacity': [
             'interpolate', ['linear'], ['zoom'],
-            6, 0.7,
-            7, 0,
+            5, 0.7,
+            6, 0,
           ] as any,
         },
       });
@@ -234,7 +234,7 @@ export function MapView({ mobilePanelOpen }: { mobilePanelOpen?: boolean }) {
         type: 'line',
         source: 'counties',
         'source-layer': 'counties',
-        maxzoom: 8,
+        maxzoom: 7,
         paint: {
           'line-color': LINE_COLOR as any,
           'line-width': [
@@ -243,20 +243,20 @@ export function MapView({ mobilePanelOpen }: { mobilePanelOpen?: boolean }) {
           ] as any,
           'line-opacity': [
             'interpolate', ['linear'], ['zoom'],
-            6, 1,
-            7, 0,
+            5, 1,
+            6, 0,
           ] as any,
         },
       });
 
-      // County labels — z5-z7
+      // County labels — z4-z6
       map.addLayer({
         id: 'county-labels',
         type: 'symbol',
         source: 'counties',
         'source-layer': 'counties',
-        minzoom: 5,
-        maxzoom: 7,
+        minzoom: 4,
+        maxzoom: 6,
         layout: {
           'text-field': ['get', 'NAME'],
           'text-size': 10,
@@ -270,19 +270,19 @@ export function MapView({ mobilePanelOpen }: { mobilePanelOpen?: boolean }) {
         },
       });
 
-      // ZCTA fill — fades in from z7-z9
+      // ZCTA fill — fades in from z5→z6 (much earlier than before)
       map.addLayer({
         id: 'zcta-fill',
         type: 'fill',
         source: 'zctas',
         'source-layer': 'zctas',
-        minzoom: 6,
+        minzoom: 5,
         paint: {
           'fill-color': ZIP_FILL_COLOR as any,
           'fill-opacity': [
             'interpolate', ['linear'], ['zoom'],
-            6, 0,
-            8, 0.7,
+            5, 0,
+            6, 0.7,
           ] as any,
         },
       });
@@ -292,7 +292,7 @@ export function MapView({ mobilePanelOpen }: { mobilePanelOpen?: boolean }) {
         type: 'line',
         source: 'zctas',
         'source-layer': 'zctas',
-        minzoom: 6,
+        minzoom: 5,
         paint: {
           'line-color': ZIP_LINE_COLOR as any,
           'line-width': [
@@ -301,8 +301,8 @@ export function MapView({ mobilePanelOpen }: { mobilePanelOpen?: boolean }) {
           ] as any,
           'line-opacity': [
             'interpolate', ['linear'], ['zoom'],
-            6, 0,
-            8, 1,
+            5, 0,
+            6, 1,
           ] as any,
         },
       });
@@ -313,7 +313,7 @@ export function MapView({ mobilePanelOpen }: { mobilePanelOpen?: boolean }) {
         type: 'line',
         source: 'zctas',
         'source-layer': 'zctas',
-        minzoom: 6,
+        minzoom: 5,
         paint: {
           'line-color': '#22d3ee',
           'line-width': ['case', ['==', ['coalesce', ['feature-state', 'selected'], 0], 1], 2.5, 0] as any,
@@ -328,7 +328,7 @@ export function MapView({ mobilePanelOpen }: { mobilePanelOpen?: boolean }) {
         type: 'fill',
         source: 'zctas',
         'source-layer': 'zctas',
-        minzoom: 6,
+        minzoom: 5,
         paint: {
           'fill-color': 'rgba(0,0,0,0.6)',
           'fill-opacity': [
@@ -343,7 +343,7 @@ export function MapView({ mobilePanelOpen }: { mobilePanelOpen?: boolean }) {
         type: 'line',
         source: 'zctas',
         'source-layer': 'zctas',
-        minzoom: 6,
+        minzoom: 5,
         paint: {
           'line-color': '#ef4444',
           'line-width': ['case', ['==', ['coalesce', ['feature-state', 'excluded'], 0], 1], 2, 0] as any,
@@ -421,7 +421,7 @@ export function MapView({ mobilePanelOpen }: { mobilePanelOpen?: boolean }) {
       const zoom = map.getZoom();
       const allZips = apiData.geo.zips;
 
-      if (zoom >= 6) {
+      if (zoom >= 5) {
         // Viewport-aware: normalize only against visible zips
         const bounds = map.getBounds();
         // Pad bounds by ~1 county width (~0.5 degrees) so edge counties are included
@@ -661,7 +661,7 @@ export function MapView({ mobilePanelOpen }: { mobilePanelOpen?: boolean }) {
       const point = e.point;
 
       // Check ZCTA layer first at higher zooms
-      if (zoom >= 6) {
+      if (zoom >= 5) {
         const zctaFeatures = map.queryRenderedFeatures(point, { layers: ['zcta-fill'] });
         if (zctaFeatures.length > 0) {
           const f = zctaFeatures[0];
@@ -682,7 +682,7 @@ export function MapView({ mobilePanelOpen }: { mobilePanelOpen?: boolean }) {
       }
 
       // County layer at lower zooms
-      if (zoom < 7) {
+      if (zoom < 6) {
         const countyFeatures = map.queryRenderedFeatures(point, { layers: ['county-fill'] });
         if (countyFeatures.length > 0) {
           const f = countyFeatures[0];
@@ -719,11 +719,7 @@ export function MapView({ mobilePanelOpen }: { mobilePanelOpen?: boolean }) {
       const point = e.point;
 
       // ZIP click — toggle in/out of dataset
-      // In selectedZips → remove (undo rescue)
-      // In excludedZips → remove (undo exclude)
-      // Currently in dataset (colored) → exclude it
-      // Currently out of dataset (not colored) → include it
-      if (zoom >= 8) {
+      if (zoom >= 6) {
         const zctaFeatures = map.queryRenderedFeatures(point, { layers: ['zcta-fill'] });
         if (zctaFeatures.length > 0) {
           const zip = zctaFeatures[0].properties?.GEOID20;
@@ -752,7 +748,7 @@ export function MapView({ mobilePanelOpen }: { mobilePanelOpen?: boolean }) {
       }
 
       // County click — zoom in
-      if (zoom < 7) {
+      if (zoom < 6) {
         const countyFeatures = map.queryRenderedFeatures(point, { layers: ['county-fill'] });
         if (countyFeatures.length > 0) {
           const f = countyFeatures[0];
