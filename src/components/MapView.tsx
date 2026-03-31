@@ -377,10 +377,25 @@ export function MapView({ mobilePanelOpen }: { mobilePanelOpen?: boolean }) {
     let globalMaxZip = 0;
     for (const z of apiData.geo.zips) { if (z.total > globalMaxZip) globalMaxZip = z.total; }
 
-    // Clear ALL feature states on both sources — not just tracked IDs.
-    // This catches tiles that loaded after the previous clear ran.
-    try { map.removeFeatureState({ source: 'counties', sourceLayer: 'counties' }); } catch { /* */ }
-    try { map.removeFeatureState({ source: 'zctas', sourceLayer: 'zctas' }); } catch { /* */ }
+    // Clear previous county states (per-ID, matching original WMS approach)
+    for (const id of prevCountyIds.current) {
+      try {
+        map.setFeatureState(
+          { source: 'counties', sourceLayer: 'counties', id },
+          { density: 0 }
+        );
+      } catch { /* */ }
+    }
+
+    // Clear previous zip states (per-ID)
+    for (const id of prevZipIds.current) {
+      try {
+        map.setFeatureState(
+          { source: 'zctas', sourceLayer: 'zctas', id },
+          { density: 0 }
+        );
+      } catch { /* */ }
+    }
 
     // Set county feature states (raw counts)
     for (const c of apiData.geo.counties) {
@@ -431,11 +446,8 @@ export function MapView({ mobilePanelOpen }: { mobilePanelOpen?: boolean }) {
         for (const z of visibleZips) { if (z.total > localMax) localMax = z.total; }
         const norm = localMax > 0 ? 100 / localMax : 0;
 
-        // Clear all ZIP feature-state first, then only set visible ones
-        try { map.removeFeatureState({ source: 'zctas', sourceLayer: 'zctas' }); } catch { /* */ }
-
-        // Apply density only to visible viewport ZIPs (+ pad)
-        for (const z of visibleZips) {
+        // Apply normalized density to all zips (matching original WMS approach)
+        for (const z of allZips) {
           try {
             map.setFeatureState(
               { source: 'zctas', sourceLayer: 'zctas', id: z.zip },
@@ -444,8 +456,16 @@ export function MapView({ mobilePanelOpen }: { mobilePanelOpen?: boolean }) {
           } catch { /* */ }
         }
       } else {
-        // Below zip zoom: clear all — ZIPs aren't visible yet
-        try { map.removeFeatureState({ source: 'zctas', sourceLayer: 'zctas' }); } catch { /* */ }
+        // Below zip zoom: use global normalization
+        const norm = globalMaxZip > 0 ? 100 / globalMaxZip : 0;
+        for (const z of allZips) {
+          try {
+            map.setFeatureState(
+              { source: 'zctas', sourceLayer: 'zctas', id: z.zip },
+              { density: z.total * norm }
+            );
+          } catch { /* */ }
+        }
       }
     };
 
@@ -456,9 +476,6 @@ export function MapView({ mobilePanelOpen }: { mobilePanelOpen?: boolean }) {
     computeAndApplyZipDensity();
 
     // Re-apply on source load events (tiles load incrementally)
-    // IMPORTANT: only ADD density here, never removeFeatureState — the main
-    // effect handles clearing. Clearing here causes race conditions where
-    // tiles at certain zoom levels lose their density between clear and re-apply.
     const handleSourceData = (e: any) => {
       if (e.sourceId === 'counties' && e.isSourceLoaded) {
         for (const c of apiData.geo.counties) {
