@@ -218,6 +218,7 @@ export function MapView({ mobilePanelOpen }: { mobilePanelOpen?: boolean }) {
         type: 'fill',
         source: 'counties',
         'source-layer': 'counties',
+        maxzoom: 9,
         paint: {
           'fill-color': FILL_COLOR as any,
           'fill-opacity': [
@@ -234,6 +235,7 @@ export function MapView({ mobilePanelOpen }: { mobilePanelOpen?: boolean }) {
         type: 'line',
         source: 'counties',
         'source-layer': 'counties',
+        maxzoom: 9,
         paint: {
           'line-color': LINE_COLOR as any,
           'line-width': [
