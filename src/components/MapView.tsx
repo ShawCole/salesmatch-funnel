@@ -456,9 +456,11 @@ export function MapView({ mobilePanelOpen }: { mobilePanelOpen?: boolean }) {
     computeAndApplyZipDensity();
 
     // Re-apply on source load events (tiles load incrementally)
+    // IMPORTANT: only ADD density here, never removeFeatureState — the main
+    // effect handles clearing. Clearing here causes race conditions where
+    // tiles at certain zoom levels lose their density between clear and re-apply.
     const handleSourceData = (e: any) => {
       if (e.sourceId === 'counties' && e.isSourceLoaded) {
-        try { map.removeFeatureState({ source: 'counties', sourceLayer: 'counties' }); } catch { /* */ }
         for (const c of apiData.geo.counties) {
           try {
             map.setFeatureState(
