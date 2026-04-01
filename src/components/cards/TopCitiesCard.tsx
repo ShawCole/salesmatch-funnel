@@ -14,8 +14,8 @@ export function TopCitiesCard({ onClose, compact }: { onClose?: () => void; comp
   );
 
   return (
-    <FloatingCard title="Top Cities" className="w-[280px]" noPadding onClose={onClose}>
-      <HorizontalBar data={data} color="#10b981" height={compact ? 225 : 240} compact={compact} />
+    <FloatingCard title="Top Cities" className="w-[340px]" noPadding onClose={onClose}>
+      <HorizontalBar data={data} color="#10b981" height={compact ? 225 : 240} yAxisWidth={130} compact={compact} />
     </FloatingCard>
   );
 }

@@ -119,5 +119,11 @@ export function reshapePyramid(
 }
 
 function titleCase(s: string): string {
-  return s.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+  // Split on ", " to handle "City, ST" format — keep state abbreviation uppercase
+  const parts = s.split(', ');
+  const city = parts[0].toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+  if (parts.length > 1) {
+    return `${city}, ${parts.slice(1).join(', ').toUpperCase()}`;
+  }
+  return city;
 }
