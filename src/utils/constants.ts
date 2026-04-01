@@ -151,7 +151,7 @@ export const CHOROPLETH_COLORS = [
 
 export const EMPLOYEE_COUNT_ORDER = [
   '1 to 10', '11 to 25', '26 to 50', '51 to 100', '101 to 250',
-  '251 to 500', '501 to 1000', '1001 to 5000', '5001 to 10000', '10000+', 'zero',
+  '251 to 500', '501 to 1000', '1001 to 5000', '5001 to 10000', '10000+',
 ];
 
 export const EMPLOYEE_COUNT_LABELS: Record<string, string> = {
@@ -165,7 +165,6 @@ export const EMPLOYEE_COUNT_LABELS: Record<string, string> = {
   '1001 to 5000': '1K–5K',
   '5001 to 10000': '5K–10K',
   '10000+': '10K+',
-  'zero': 'None/Unknown',
 };
 
 export const COMPANY_REVENUE_ORDER = [
