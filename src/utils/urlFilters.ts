@@ -9,6 +9,8 @@ const PARAM_MAP = {
   creditRating: 'credit',
   seniorityLevel: 'seniority',
   homeowner: 'homeowner',
+  employeeCount: 'emp',
+  companyRevenue: 'rev',
   city: 'city',
   county: 'county',
   language: 'lang',
@@ -27,6 +29,8 @@ type FilterState = {
   creditRating: MultiSelectFilter;
   seniorityLevel: MultiSelectFilter;
   homeowner: MultiSelectFilter;
+  employeeCount: MultiSelectFilter;
+  companyRevenue: MultiSelectFilter;
   city: MultiSelectFilter;
   county: MultiSelectFilter;
   language: MultiSelectFilter;
@@ -97,6 +101,8 @@ export function searchParamsToFilters(search: string): FilterState | null {
     creditRating: emptyFilter(),
     seniorityLevel: emptyFilter(),
     homeowner: emptyFilter(),
+    employeeCount: emptyFilter(),
+    companyRevenue: emptyFilter(),
     city: emptyFilter(),
     county: emptyFilter(),
     language: emptyFilter(),

@@ -149,4 +149,43 @@ export const CHOROPLETH_COLORS = [
   '#ef4444',           // very high
 ];
 
+export const EMPLOYEE_COUNT_ORDER = [
+  '1 to 10', '11 to 25', '26 to 50', '51 to 100', '101 to 250',
+  '251 to 500', '501 to 1000', '1001 to 5000', '5001 to 10000', '10000+', 'zero',
+];
+
+export const EMPLOYEE_COUNT_LABELS: Record<string, string> = {
+  '1 to 10': '1–10',
+  '11 to 25': '11–25',
+  '26 to 50': '26–50',
+  '51 to 100': '51–100',
+  '101 to 250': '101–250',
+  '251 to 500': '251–500',
+  '501 to 1000': '501–1K',
+  '1001 to 5000': '1K–5K',
+  '5001 to 10000': '5K–10K',
+  '10000+': '10K+',
+  'zero': 'None/Unknown',
+};
+
+export const COMPANY_REVENUE_ORDER = [
+  'under 1 million', '1 million to 5 million', '5 million to 10 million',
+  '10 million to 25 million', '25 million to 50 million', '50 million to 100 million',
+  '100 million to 250 million', '250 million to 500 million',
+  '500 million to 1 billion', '1 billion and over',
+];
+
+export const COMPANY_REVENUE_LABELS: Record<string, string> = {
+  'under 1 million': '< $1M',
+  '1 million to 5 million': '$1M–$5M',
+  '5 million to 10 million': '$5M–$10M',
+  '10 million to 25 million': '$10M–$25M',
+  '25 million to 50 million': '$25M–$50M',
+  '50 million to 100 million': '$50M–$100M',
+  '100 million to 250 million': '$100M–$250M',
+  '250 million to 500 million': '$250M–$500M',
+  '500 million to 1 billion': '$500M–$1B',
+  '1 billion and over': '$1B+',
+};
+
 export const CHOROPLETH_STOPS = [0, 1, 5, 15, 40, 100, 300];

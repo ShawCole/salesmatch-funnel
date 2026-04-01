@@ -54,6 +54,8 @@ def convert_csv(path, centroids, zip2fips):
             married = (row.get('MARRIED') or '').strip().upper()
             children = (row.get('CHILDREN') or '').strip().upper()
             homeowner = (row.get('HOMEOWNER') or '').strip().upper()
+            emp_count = (row.get('COMPANY_EMPLOYEE_COUNT') or '').strip()
+            comp_rev = (row.get('COMPANY_REVENUE') or '').strip()
             county_fips = zip2fips.get(z, '')
             coords = centroids.get(z)
             lat = coords[0] if coords else None
@@ -74,6 +76,8 @@ def convert_csv(path, centroids, zip2fips):
             if married in ('Y', 'N'): rec['m'] = married
             if children in ('Y', 'N'): rec['h'] = children
             if homeowner in ('Y', 'N'): rec['o'] = homeowner
+            if emp_count: rec['ec'] = emp_count
+            if comp_rev: rec['cr2'] = comp_rev
             if county_fips: rec['f'] = county_fips
             if lat is not None: rec['y'] = round(lat, 4)
             if lng is not None: rec['x'] = round(lng, 4)

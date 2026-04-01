@@ -1,6 +1,6 @@
 import { useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import { useFilters, type MultiSelectKey, type DatasetKey } from '../contexts/FilterContext';
-import { AGE_RANGE_ORDER, AGE_RANGE_LABELS, GENDER_ORDER, INCOME_RANGE_ORDER, INCOME_RANGE_LABELS, NET_WORTH_ORDER, NET_WORTH_LABELS, CREDIT_RATING_ORDER, CREDIT_RATING_LABELS, LANGUAGE_CODE_LABELS } from '../utils/constants';
+import { AGE_RANGE_ORDER, AGE_RANGE_LABELS, GENDER_ORDER, INCOME_RANGE_ORDER, INCOME_RANGE_LABELS, NET_WORTH_ORDER, NET_WORTH_LABELS, CREDIT_RATING_ORDER, CREDIT_RATING_LABELS, LANGUAGE_CODE_LABELS, EMPLOYEE_COUNT_ORDER, EMPLOYEE_COUNT_LABELS, COMPANY_REVENUE_ORDER, COMPANY_REVENUE_LABELS } from '../utils/constants';
 import { X, Copy, Check, ChevronDown } from 'lucide-react';
 import { MultiSelectPopover } from './MultiSelectPopover';
 import { SingleSelectPopover } from './SingleSelectPopover';
@@ -414,6 +414,22 @@ export function FilterBar({ onCollapseChange }: { onCollapseChange?: (collapsed:
             filter={filters.homeowner}
             onToggle={handleToggle('homeowner')}
             onClear={handleClear('homeowner')}
+          />
+          <MultiSelectPopover
+            label="Headcount"
+            options={EMPLOYEE_COUNT_ORDER}
+            labelMap={EMPLOYEE_COUNT_LABELS}
+            filter={filters.employeeCount}
+            onToggle={handleToggle('employeeCount')}
+            onClear={handleClear('employeeCount')}
+          />
+          <MultiSelectPopover
+            label="Est. Revenue"
+            options={COMPANY_REVENUE_ORDER}
+            labelMap={COMPANY_REVENUE_LABELS}
+            filter={filters.companyRevenue}
+            onToggle={handleToggle('companyRevenue')}
+            onClear={handleClear('companyRevenue')}
           />
         </div>
         </div>{/* end collapsible */}

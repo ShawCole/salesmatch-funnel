@@ -18,6 +18,8 @@ export interface FilterState {
   creditRating: MultiSelectFilter;
   seniorityLevel: MultiSelectFilter;
   homeowner: MultiSelectFilter;
+  employeeCount: MultiSelectFilter;
+  companyRevenue: MultiSelectFilter;
   city: MultiSelectFilter;
   county: MultiSelectFilter;
   language: MultiSelectFilter;
@@ -28,7 +30,7 @@ export interface FilterState {
 
 export type MultiSelectKey =
   | 'intent' | 'ageRange' | 'gender' | 'incomeRange' | 'netWorth'
-  | 'creditRating' | 'seniorityLevel' | 'homeowner' | 'city' | 'county' | 'language' | 'state';
+  | 'creditRating' | 'seniorityLevel' | 'homeowner' | 'employeeCount' | 'companyRevenue' | 'city' | 'county' | 'language' | 'state';
 
 type Action =
   | { type: 'SET_TOPIC'; topic: string }
@@ -62,6 +64,8 @@ function buildEmptyState(): FilterState {
     creditRating: emptyFilter(),
     seniorityLevel: emptyFilter(),
     homeowner: emptyFilter(),
+    employeeCount: emptyFilter(),
+    companyRevenue: emptyFilter(),
     city: emptyFilter(),
     county: emptyFilter(),
     language: emptyFilter(),
@@ -126,7 +130,7 @@ function serializeFilters(f: FilterState): string {
     f.topic,
     serMF(f.intent), serMF(f.ageRange), serMF(f.gender),
     serMF(f.incomeRange), serMF(f.netWorth), serMF(f.creditRating),
-    serMF(f.seniorityLevel), serMF(f.homeowner), serMF(f.city), serMF(f.county),
+    serMF(f.seniorityLevel), serMF(f.homeowner), serMF(f.employeeCount), serMF(f.companyRevenue), serMF(f.city), serMF(f.county),
     serMF(f.language), serMF(f.state),
     serSet(f.selectedZips), serSet(f.excludedZips),
   ].join(';;');

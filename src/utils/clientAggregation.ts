@@ -39,6 +39,8 @@ export interface CompactRecord {
   m?: string;  // married (Y/N)
   h?: string;  // children (Y/N)
   o?: string;  // homeowner (Y/N)
+  ec?: string; // employee_count
+  cr2?: string; // company_revenue
   f?: string;  // county_fips
   y?: number;  // lat
   x?: number;  // lng
@@ -52,6 +54,8 @@ export interface FilterState {
   creditRating: MultiSelectFilter;
   seniorityLevel: MultiSelectFilter;
   homeowner: MultiSelectFilter;
+  employeeCount: MultiSelectFilter;
+  companyRevenue: MultiSelectFilter;
   city: MultiSelectFilter;
   county: MultiSelectFilter;
   language: MultiSelectFilter;
@@ -82,6 +86,8 @@ export function aggregateRecords(
     filters.creditRating.include.size > 0 || filters.creditRating.exclude.size > 0 ||
     filters.seniorityLevel.include.size > 0 || filters.seniorityLevel.exclude.size > 0 ||
     filters.homeowner.include.size > 0 || filters.homeowner.exclude.size > 0 ||
+    filters.employeeCount.include.size > 0 || filters.employeeCount.exclude.size > 0 ||
+    filters.companyRevenue.include.size > 0 || filters.companyRevenue.exclude.size > 0 ||
     filters.language.include.size > 0 || filters.language.exclude.size > 0 ||
     filters.selectedZips.size > 0 || filters.excludedZips.size > 0;
 
@@ -95,6 +101,8 @@ export function aggregateRecords(
     if (!matchesFilter(rec.r, filters.creditRating)) return false;
     if (!matchesFilter(rec.e, filters.seniorityLevel)) return false;
     if (!matchesFilter(rec.o, filters.homeowner)) return false;
+    if (!matchesFilter(rec.ec, filters.employeeCount)) return false;
+    if (!matchesFilter(rec.cr2, filters.companyRevenue)) return false;
     if (!matchesFilter(rec.l, filters.language)) return false;
 
     // City filter
