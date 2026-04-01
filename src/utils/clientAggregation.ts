@@ -6,6 +6,24 @@
 import type { DashboardResponse, GeoCounty, GeoZip, AgeGenderBucket, BucketCount, CityCount, LanguageCount, SeniorityCount, FamilyAgg, FilterOptionCity, FilterOptionCounty, FilterOptionLanguage } from '../types/dashboard';
 import type { MultiSelectFilter } from '../types/record';
 
+// County FIPS → name lookup (loaded async, cached)
+let countyNames: Record<string, string> | null = null;
+let countyNamesPromise: Promise<Record<string, string>> | null = null;
+
+export function loadCountyNames(): Promise<Record<string, string>> {
+  if (countyNames) return Promise.resolve(countyNames);
+  if (countyNamesPromise) return countyNamesPromise;
+  countyNamesPromise = fetch('/county-names.json')
+    .then(r => r.json())
+    .then((data: Record<string, string>) => { countyNames = data; return data; })
+    .catch(() => { countyNames = {}; return {}; });
+  return countyNamesPromise;
+}
+
+function getCountyName(fips: string): string {
+  return countyNames?.[fips] || fips;
+}
+
 /** Compact record format from convert-csv.py */
 export interface CompactRecord {
   z?: string;  // zip
@@ -218,7 +236,7 @@ export function aggregateRecords(
     .sort((a, b) => b.count - a.count).slice(0, 200);
 
   const countyOptions: FilterOptionCounty[] = geoCounties.slice(0, 500).map(c => ({
-    fips: c.fips, name: c.fips, state: c.state, count: c.total,
+    fips: c.fips, name: getCountyName(c.fips), state: c.state, count: c.total,
   }));
 
   const langOptions: FilterOptionLanguage[] = languages;

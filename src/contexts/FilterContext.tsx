@@ -2,7 +2,7 @@ import { createContext, useContext, useReducer, useMemo, useEffect, useRef, useS
 import type { MultiSelectFilter } from '../types/record';
 import type { DashboardResponse } from '../types/dashboard';
 import { searchParamsToFilters, syncFiltersToURL } from '../utils/urlFilters';
-import { aggregateRecords, type CompactRecord } from '../utils/clientAggregation';
+import { aggregateRecords, loadCountyNames, type CompactRecord } from '../utils/clientAggregation';
 
 function emptyFilter(): MultiSelectFilter {
   return { include: new Set(), exclude: new Set() };
@@ -188,9 +188,8 @@ export function FilterProvider({ children }: { children: ReactNode }) {
     }
 
     setLoading(true);
-    fetch(DATASET_URLS[dataset])
-      .then(r => r.json())
-      .then((records: CompactRecord[]) => {
+    Promise.all([fetch(DATASET_URLS[dataset]).then(r => r.json()), loadCountyNames()])
+      .then(([records]: [CompactRecord[], any]) => {
         recordCache.current[dataset] = records;
         rawRecords.current = records;
         const result = aggregateRecords(records, filters);
