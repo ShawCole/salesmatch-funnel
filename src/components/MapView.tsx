@@ -213,12 +213,13 @@ export function MapView({ mobilePanelOpen }: { mobilePanelOpen?: boolean }) {
       });
 
       // County fill — full up to z7, fades z7→z8
+      // NO maxzoom — MapLibre drops the layer entirely after zooming past maxzoom
+      // and doesn't restore it reliably when zooming back. Use opacity only.
       map.addLayer({
         id: 'county-fill',
         type: 'fill',
         source: 'counties',
         'source-layer': 'counties',
-        maxzoom: 9,
         paint: {
           'fill-color': FILL_COLOR as any,
           'fill-opacity': [
@@ -234,7 +235,6 @@ export function MapView({ mobilePanelOpen }: { mobilePanelOpen?: boolean }) {
         type: 'line',
         source: 'counties',
         'source-layer': 'counties',
-        maxzoom: 9,
         paint: {
           'line-color': LINE_COLOR as any,
           'line-width': [
@@ -475,25 +475,41 @@ export function MapView({ mobilePanelOpen }: { mobilePanelOpen?: boolean }) {
     // Initial apply
     computeAndApplyZipDensity();
 
-    // Re-apply on source load events (tiles load incrementally)
+    // Re-apply density whenever new tiles load. PMTiles serves different
+    // features at different zoom levels — feature-state must be re-applied
+    // to newly loaded features as tile zoom changes.
+    const reapplyCountyDensity = () => {
+      for (const c of apiData.geo.counties) {
+        try {
+          map.setFeatureState(
+            { source: 'counties', sourceLayer: 'counties', id: c.fips },
+            { density: c.total }
+          );
+        } catch { /* */ }
+      }
+    };
+
     const handleSourceData = (e: any) => {
-      if (e.sourceId === 'counties' && e.isSourceLoaded) {
-        for (const c of apiData.geo.counties) {
-          try {
-            map.setFeatureState(
-              { source: 'counties', sourceLayer: 'counties', id: c.fips },
-              { density: c.total }
-            );
-          } catch { /* */ }
-        }
+      if (e.sourceId === 'counties') {
+        reapplyCountyDensity();
       }
       if (e.sourceId === 'zctas' && e.isSourceLoaded) {
         computeAndApplyZipDensity();
       }
     };
 
+    // Also re-apply on moveend — catches zoom transitions where
+    // new tile zoom levels load between sourcedata events
+    const handleMoveEndDensity = () => {
+      reapplyCountyDensity();
+    };
+
     map.on('sourcedata', handleSourceData);
-    return () => { map.off('sourcedata', handleSourceData); };
+    map.on('moveend', handleMoveEndDensity);
+    return () => {
+      map.off('sourcedata', handleSourceData);
+      map.off('moveend', handleMoveEndDensity);
+    };
   }, [mapReady, apiData]);
 
   // Viewport-aware: re-normalize zip density on pan/zoom
