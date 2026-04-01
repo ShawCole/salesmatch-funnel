@@ -373,18 +373,18 @@ export function MapView({ mobilePanelOpen }: { mobilePanelOpen?: boolean }) {
     prevCountyIds.current = newCountyIds;
     prevZipIds.current = newZipIds;
 
-    // Apply immediately + schedule repeated applies to catch tile loads
-    // This is the nuclear approach: keep re-applying until tiles are loaded
+    // Apply counties + ZIPs immediately, then retry for async tile loads
     const apply = () => {
       const data = apiDataRef.current;
       if (!data) return;
       for (const c of data.geo.counties) {
         try { map.setFeatureState({ source: 'counties', sourceLayer: 'counties', id: c.fips }, { density: c.total }); } catch { /* */ }
       }
+      // Also trigger ZIP density recompute
+      applyZipDensity.current();
     };
 
     apply();
-    // Re-apply after short delays to catch tiles that load async
     const t1 = setTimeout(apply, 100);
     const t2 = setTimeout(apply, 500);
     const t3 = setTimeout(apply, 1500);
