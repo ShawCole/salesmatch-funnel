@@ -1,0 +1,2 @@
+    const onSourceData = (e: any) => {
+      // Only reapply when source is actually idle/loaded, not on every tile stream

@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { FilterProvider } from './contexts/FilterContext';
+import { FunnelDashboard } from './components/funnel/FunnelDashboard';
 import { MapView } from './components/MapView';
 import { FilterBar } from './components/FilterBar';
 import { StatsBar } from './components/StatsBar';
@@ -51,6 +52,10 @@ const GRID_ORDER = [
 ];
 
 function App() {
+  const [view, setView] = useState<'funnel' | 'map'>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('view') === 'map' ? 'map' : 'funnel';
+  });
   const [visibility, setVisibility] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(CARD_CONFIGS.map(c => [c.id, true])),
   );
@@ -99,6 +104,34 @@ function App() {
   };
 
   const visibleMobileCards = GRID_ORDER.filter(id => visibility[id]);
+
+  // View toggle component
+  const ViewToggle = () => (
+    <div className="fixed top-4 right-4 z-[300] flex gap-1 glass rounded-lg p-1">
+      <button
+        onClick={() => setView('funnel')}
+        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${view === 'funnel' ? 'bg-purple-600/40 text-purple-200' : 'text-gray-400 hover:text-white'}`}
+      >
+        Funnel
+      </button>
+      <button
+        onClick={() => setView('map')}
+        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${view === 'map' ? 'bg-purple-600/40 text-purple-200' : 'text-gray-400 hover:text-white'}`}
+      >
+        Map
+      </button>
+    </div>
+  );
+
+  // Funnel Dashboard view
+  if (view === 'funnel') {
+    return (
+      <>
+        <ViewToggle />
+        <FunnelDashboard />
+      </>
+    );
+  }
 
   if (isMobile) {
     return (
@@ -163,6 +196,7 @@ function App() {
   return (
     <FilterProvider>
       <div className="relative w-screen h-screen overflow-hidden bg-gray-950">
+        <ViewToggle />
         <MapView />
         <div className="absolute top-0 left-0 right-0 z-[200] p-3 pointer-events-none">
           <FilterBar onCollapseChange={setFiltersCollapsed} />

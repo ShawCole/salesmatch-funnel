@@ -1,0 +1,71 @@
+{
+  "client": "Sales Match",
+  "timeframe": "Past Month",
+  "highlights": {
+    "totalSpend": { "value": 10500, "trend": 8.2 },
+    "impressions": { "value": 892000, "trend": -2.1 },
+    "clicks": { "value": 12400, "trend": 12.3 },
+    "avgCTR": { "value": 1.39, "trend": 14.7 },
+    "avgCPC": { "value": 0.85, "trend": -5.3 },
+    "influencedAccounts": { "value": 4321, "trend": 8.2 }
+  },
+  "campaigns": [
+    {
+      "id": "ceo",
+      "name": "CEO Avatar",
+      "label": "Sales Pain",
+      "color": "#6366f1",
+      "adSet": { "platform": "meta", "headline": "Can't find good salespeople?", "impressions": 223000, "clicks": 3100, "spend": 2625, "ctr": 1.39, "cpc": 0.85 },
+      "landingPage": { "url": "salesmatch.co/sales-hiring", "bounceRate": 34, "pageViews": 3100 },
+      "conversion": { "type": "calendly", "booked": 15, "convRate": 21.6 },
+      "funnel": { "targeted": 7128, "awareness": 516, "interest": 420, "consideration": 286, "evaluation": 200 },
+      "movement": { "awareness": { "entered": 48, "left": 0 }, "interest": { "entered": 53, "left": 12 }, "consideration": { "entered": 36, "left": 8 }, "evaluation": { "entered": 24, "left": 0 } },
+      "audienceLink": "https://salesmatch-explorer.netlify.app/?dataset=sales_revenue"
+    },
+    {
+      "id": "vp_sales",
+      "name": "VP Sales Avatar",
+      "label": "Team Turnover",
+      "color": "#2563eb",
+      "adSet": { "platform": "meta", "headline": "Losing your best closers?", "impressions": 223000, "clicks": 3200, "spend": 2625, "ctr": 1.43, "cpc": 0.82 },
+      "landingPage": { "url": "salesmatch.co/retention", "bounceRate": 38, "pageViews": 3200 },
+      "conversion": { "type": "calendly", "booked": 12, "convRate": 18.2 },
+      "funnel": { "targeted": 13612, "awareness": 680, "interest": 530, "consideration": 350, "evaluation": 165 },
+      "movement": { "awareness": { "entered": 52, "left": 0 }, "interest": { "entered": 41, "left": 15 }, "consideration": { "entered": 30, "left": 5 }, "evaluation": { "entered": 16, "left": 0 } },
+      "audienceLink": "https://salesmatch-explorer.netlify.app/?dataset=sales_headcount"
+    },
+    {
+      "id": "founder",
+      "name": "Founder Avatar",
+      "label": "CSM Cost Reduction",
+      "color": "#10b981",
+      "adSet": { "platform": "dsp", "headline": "CSMs from South Africa — 75% less", "impressions": 223000, "clicks": 2900, "spend": 2625, "ctr": 1.30, "cpc": 0.91 },
+      "landingPage": { "url": "salesmatch.co/csm-hiring", "bounceRate": 41, "pageViews": 2900 },
+      "conversion": { "type": "calendly", "booked": 10, "convRate": 15.4 },
+      "funnel": { "targeted": 21428, "awareness": 856, "interest": 642, "consideration": 428, "evaluation": 214 },
+      "movement": { "awareness": { "entered": 58, "left": 0 }, "interest": { "entered": 48, "left": 18 }, "consideration": { "entered": 35, "left": 10 }, "evaluation": { "entered": 20, "left": 0 } },
+      "audienceLink": "https://salesmatch-explorer.netlify.app/?dataset=csm_revenue"
+    },
+    {
+      "id": "coo",
+      "name": "COO Avatar",
+      "label": "Scale Without Hiring US",
+      "color": "#f59e0b",
+      "adSet": { "platform": "meta", "headline": "Need more CSMs but can't afford US rates?", "impressions": 223000, "clicks": 3200, "spend": 2625, "ctr": 1.43, "cpc": 0.82 },
+      "landingPage": { "url": "salesmatch.co/scale", "bounceRate": 36, "pageViews": 3200 },
+      "conversion": { "type": "calendly", "booked": 13, "convRate": 19.7 },
+      "funnel": { "targeted": 40702, "awareness": 1628, "interest": 1221, "consideration": 814, "evaluation": 407 },
+      "movement": { "awareness": { "entered": 62, "left": 0 }, "interest": { "entered": 55, "left": 14 }, "consideration": { "entered": 42, "left": 7 }, "evaluation": { "entered": 25, "left": 0 } },
+      "audienceLink": "https://salesmatch-explorer.netlify.app/?dataset=csm_headcount"
+    }
+  ],
+  "aggregate": {
+    "funnel": { "targeted": 82870, "awareness": 3680, "interest": 2813, "consideration": 1878, "evaluation": 986 },
+    "movement": {
+      "awareness": { "entered": 220, "left": 0 },
+      "interest": { "entered": 197, "left": 59 },
+      "consideration": { "entered": 143, "left": 30 },
+      "evaluation": { "entered": 85, "left": 0 }
+    }
+  }
+}

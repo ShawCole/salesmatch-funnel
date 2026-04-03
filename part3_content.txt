@@ -1,0 +1,362 @@
+
+    const onMoveEnd = () => {
+      reapplyCounties();
+      computeZipDensity();
+      setZoomLevel(map.getZoom());
+    };
+
+    const onZoom = () => {
+      const z = map.getZoom();
+      setZoomLevel(z);
+
+      // Manually control county/ZIP opacity crossfade to avoid interpolation bugs
+      // Counties: full below z6, fade to 0 at z7
+      const countyOpacity = z <= 6 ? 0.7 : z >= 7 ? 0 : 0.7 * (7 - z);
+      const countyLineOpacity = z <= 6 ? 1 : z >= 7 ? 0 : (7 - z);
+      try { map.setPaintProperty('county-fill', 'fill-opacity', countyOpacity); } catch { /* */ }
+      try { map.setPaintProperty('county-outline', 'line-opacity', countyLineOpacity); } catch { /* */ }
+
+      // ZIPs: invisible below z6, full at z7
+      const zipOpacity = z <= 6 ? 0 : z >= 7 ? 0.7 : 0.7 * (z - 6);
+      const zipLineOpacity = z <= 6 ? 0 : z >= 7 ? 1 : (z - 6);
+      try { map.setPaintProperty('zcta-fill', 'fill-opacity', zipOpacity); } catch { /* */ }
+      try { map.setPaintProperty('zcta-outline', 'line-opacity', zipLineOpacity); } catch { /* */ }
+    };
+
+    map.on('sourcedata', onSourceData);
+    map.on('moveend', onMoveEnd);
+    map.on('zoom', onZoom);
+
+    // Initial apply
+    reapplyCounties();
+    computeZipDensity();
+
+    return () => {
+      map.off('sourcedata', onSourceData);
+      map.off('moveend', onMoveEnd);
+      map.off('zoom', onZoom);
+    };
+  }, [mapReady]); // Only depends on mapReady — registered ONCE
+
+  // Auto-zoom to fit filtered geo data on load and filter changes
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady || !apiData) return;
+
+    // Determine if any geo filters are active
+    const hasGeoFilter =
+      filters.state.include.size > 0 || filters.state.exclude.size > 0 ||
+      filters.county.include.size > 0 || filters.county.exclude.size > 0 ||
+      filters.city.include.size > 0 || filters.city.exclude.size > 0 ||
+      filters.selectedZips.size > 0 || filters.excludedZips.size > 0;
+
+    if (!hasGeoFilter) {
+      // No geo filters — reset to national if we were previously zoomed
+      if (prevFitKey.current !== '') {
+        prevFitKey.current = '';
+        map.flyTo({ center: [INITIAL_VIEW.lng, INITIAL_VIEW.lat], zoom: INITIAL_VIEW.zoom, duration: 800 });
+      }
+      return;
+    }
+
+    // Build a stable key from the filtered geo zips to detect changes
+    const geoZips = apiData.geo.zips;
+    const fitKey = geoZips.map(z => z.zip).sort().join(',');
+
+    if (fitKey === prevFitKey.current) return;
+
+    // Check skip flag (user clicked a ZIP — don't refit)
+    if (skipNextFit.current) {
+      skipNextFit.current = false;
+      prevFitKey.current = fitKey;
+      return;
+    }
+
+    prevFitKey.current = fitKey;
+
+    if (geoZips.length === 0) return;
+
+    // Compute bounds from all relevant geo areas:
+    // - County includes: full county extent from tooltipGeo
+    // - State includes: full state extent from tooltipGeo
+    // - Selected ZIPs: include their coords too (may be outside county/state)
+    // Falls back to geo-filtered zips when no tooltipGeo available.
+    let boundsZips = geoZips;
+    const tipZips = apiData.tooltipGeo?.zips;
+    if (tipZips) {
+      const parts: typeof tipZips = [];
+      if (filters.county.include.size > 0) {
+        const countyFips = filters.county.include;
+        parts.push(...tipZips.filter(z => countyFips.has(z.county_fips)));
+      }
+      if (filters.state.include.size > 0) {
+        const states = filters.state.include;
+        parts.push(...tipZips.filter(z => states.has(z.state)));
+      }
+      if (filters.selectedZips.size > 0) {
+        const selectedSet = filters.selectedZips;
+        parts.push(...tipZips.filter(z => selectedSet.has(z.zip)));
+      }
+      if (parts.length > 0) boundsZips = parts;
+    } else if (filters.selectedZips.size > 0) {
+      // No tooltipGeo but selected zips — include them from geoZips
+      const selectedSet = filters.selectedZips;
+      const extraZips = geoZips.filter(z => selectedSet.has(z.zip));
+      if (extraZips.length > 0) boundsZips = [...geoZips, ...extraZips];
+    }
+
+    // Compute bounds from ZIP lat/lng
+    const bounds = new maplibregl.LngLatBounds();
+    let hasCoords = false;
+    for (const z of boundsZips) {
+      if (z.lat != null && z.lng != null) {
+        bounds.extend([z.lng, z.lat]);
+        hasCoords = true;
+      }
+    }
+
+    if (!hasCoords) return;
+
+    // Expand bounds with UI awareness:
+    // More buffer on left (charts panel ~340px) to shift data area right
+    const sw = bounds.getSouthWest();
+    const ne = bounds.getNorthEast();
+    const lngSpan = ne.lng - sw.lng;
+    const latSpan = ne.lat - sw.lat;
+    bounds.extend([sw.lng - lngSpan * 0.8, sw.lat - latSpan * 0.3]);
+    bounds.extend([ne.lng + lngSpan * 0.3, ne.lat + latSpan * 0.3]);
+
+    map.fitBounds(bounds, {
+      padding: { top: 80, bottom: 60, left: 20, right: 20 },
+      duration: 800,
+    });
+  }, [mapReady, apiData, filters.state, filters.county, filters.city,
+      filters.selectedZips, filters.excludedZips, mobilePanelOpen]);
+
+  // Apply selected state highlight
+  const prevSelectedStates = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+
+    // Clear previous
+    for (const id of prevSelectedStates.current) {
+      try { map.setFeatureState({ source: 'states', sourceLayer: 'states', id }, { selected: 0 }); } catch { /* */ }
+    }
+
+    // Apply new
+    for (const st of filters.state.include) {
+      try { map.setFeatureState({ source: 'states', sourceLayer: 'states', id: st }, { selected: 1 }); } catch { /* */ }
+    }
+
+    prevSelectedStates.current = new Set(filters.state.include);
+  }, [mapReady, filters.state.include]);
+
+  // Apply selected/excluded ZIP visual states
+  const prevSelectedRef = useRef<Set<string>>(new Set());
+  const prevExcludedRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+
+    // Clear previous selected states
+    for (const id of prevSelectedRef.current) {
+      try { map.setFeatureState({ source: 'zctas', sourceLayer: 'zctas', id }, { selected: 0 }); } catch { /* */ }
+    }
+    for (const id of prevExcludedRef.current) {
+      try { map.setFeatureState({ source: 'zctas', sourceLayer: 'zctas', id }, { excluded: 0 }); } catch { /* */ }
+    }
+
+    // Apply new states
+    for (const zip of filters.selectedZips) {
+      try { map.setFeatureState({ source: 'zctas', sourceLayer: 'zctas', id: zip }, { selected: 1 }); } catch { /* */ }
+    }
+    for (const zip of filters.excludedZips) {
+      try { map.setFeatureState({ source: 'zctas', sourceLayer: 'zctas', id: zip }, { excluded: 1 }); } catch { /* */ }
+    }
+
+    prevSelectedRef.current = new Set(filters.selectedZips);
+    prevExcludedRef.current = new Set(filters.excludedZips);
+  }, [mapReady, filters.selectedZips, filters.excludedZips]);
+
+  // Hover handling
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+
+    const onMouseMove = (e: maplibregl.MapMouseEvent) => {
+      const zoom = map.getZoom();
+      const point = e.point;
+
+      // Check ZCTA layer first (visible at z6+, interactive at z6+)
+      if (zoom >= 6) {
+        const zctaFeatures = map.queryRenderedFeatures(point, { layers: ['zcta-fill'] });
+        if (zctaFeatures.length > 0) {
+          const f = zctaFeatures[0];
+          const zip = f.properties?.GEOID20;
+          if (zip) {
+            const data = tipZipMap.get(zip);
+            setHoveredFeature({
+              name: `ZIP ${zip}`,
+              count: data?.total || 0,
+              type: 'zip',
+            });
+            setHoverPos({ x: point.x, y: point.y });
+            resetFade();
+            map.getCanvas().style.cursor = 'pointer';
+            return;
+          }
+        }
+      }
+
+      // County layer (visible up to z7, interactive below z7)
+      if (zoom < 7) {
+        const countyFeatures = map.queryRenderedFeatures(point, { layers: ['county-fill'] });
+        if (countyFeatures.length > 0) {
+          const f = countyFeatures[0];
+          const fips = f.properties?.GEOID;
+          const name = f.properties?.NAME;
+          if (fips) {
+            const data = tipCountyMap.get(fips);
+            setHoveredFeature({
+              name: `${name || fips} County`,
+              count: data?.total || 0,
+              type: 'county',
+            });
+            setHoverPos({ x: point.x, y: point.y });
+            resetFade();
+            map.getCanvas().style.cursor = data && data.total > 0 ? 'pointer' : 'grab';
+            return;
+          }
+        }
+      }
+
+      setHoveredFeature(null);
+      setHoverPos(null);
+      map.getCanvas().style.cursor = 'grab';
+    };
+
+    const onMouseLeave = () => {
+      setHoveredFeature(null);
+      setHoverPos(null);
+      map.getCanvas().style.cursor = 'grab';
+    };
+
+    const onClick = (e: maplibregl.MapMouseEvent & { originalEvent: MouseEvent }) => {
+      const zoom = map.getZoom();
+      const point = e.point;
+
+      // ZIP click — toggle in/out of dataset (z7+ when ZIPs are fully solid)
+      if (zoom >= 7) {
+        const zctaFeatures = map.queryRenderedFeatures(point, { layers: ['zcta-fill'] });
+        if (zctaFeatures.length > 0) {
+          const zip = zctaFeatures[0].properties?.GEOID20;
+          if (zip) {
+            skipNextFit.current = true;
+            const isSelected = filters.selectedZips.has(zip);
+            const isExcluded = filters.excludedZips.has(zip);
+            const isInDataset = zipMap.has(zip) && (zipMap.get(zip)?.total ?? 0) > 0;
+
+            if (isSelected) {
+              // Undo the rescue/include
+              dispatch({ type: 'TOGGLE_ZIP', zip });
+            } else if (isExcluded) {
+              // Undo the exclude
+              dispatch({ type: 'TOGGLE_EXCLUDE_ZIP', zip });
+            } else if (isInDataset) {
+              // It's in → take it out
+              dispatch({ type: 'TOGGLE_EXCLUDE_ZIP', zip });
+            } else {
+              // It's out → bring it in
+              dispatch({ type: 'TOGGLE_ZIP', zip });
+            }
+            return;
+          }
+        }
+      }
+
+      // County click — zoom in (below z7)
+      if (zoom < 7) {
+        const countyFeatures = map.queryRenderedFeatures(point, { layers: ['county-fill'] });
+        if (countyFeatures.length > 0) {
+          const f = countyFeatures[0];
+          const fips = f.properties?.GEOID;
+          const data = countyMap.get(fips);
+          if (data && data.total > 0) {
+            const geometry = f.geometry as any;
+            if (geometry) {
+              const bounds = new maplibregl.LngLatBounds();
+              const walkCoords = (coords: any) => {
+                if (typeof coords[0] === 'number') {
+                  bounds.extend(coords as [number, number]);
+                } else {
+                  for (const c of coords) walkCoords(c);
+                }
+              };
+              walkCoords(geometry.coordinates);
+              if (!bounds.isEmpty()) {
+                map.fitBounds(bounds, { padding: 50, duration: 800, maxZoom: 11 });
+              }
+            }
+          }
+        }
+      }
+    };
+
+    map.on('mousemove', onMouseMove);
+    map.on('mouseleave', onMouseLeave);
+    map.on('click', onClick);
+
+    // Clear tooltip when pointer enters cards
+    const clearHandler = () => {
+      setHoveredFeature(null);
+      setHoverPos(null);
+    };
+    window.addEventListener('card-hover-start', clearHandler);
+    window.addEventListener('chart-panel-enter', clearHandler);
+
+    return () => {
+      map.off('mousemove', onMouseMove);
+      map.off('mouseleave', onMouseLeave);
+      map.off('click', onClick);
+      window.removeEventListener('card-hover-start', clearHandler);
+      window.removeEventListener('chart-panel-enter', clearHandler);
+    };
+  }, [mapReady, countyMap, zipMap, tipCountyMap, tipZipMap, resetFade, dispatch]);
+
+  return (
+    <div className="absolute inset-0">
+      <div ref={mapContainer} className="w-full h-full" />
+
+      {/* Loading spinner */}
+      {loading && (
+        <div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none">
+          <div className="w-10 h-10 rounded-full border-[3px] border-gray-700 border-t-purple-500 animate-spin" />
+        </div>
+      )}
+
+      {/* Zoom level */}
+      <div className="absolute bottom-3 right-3 z-10 w-12 h-12 flex items-center justify-center rounded-lg bg-gray-900/80 border border-white/10 backdrop-blur-sm pointer-events-none">
+        <span className="text-[11px] text-gray-200 font-mono font-medium">{zoomLevel.toFixed(2)}</span>
+      </div>
+
+      {/* Hover tooltip */}
+      {hoveredFeature && hoverPos && (
+        <div
+          className="glass-light rounded-lg px-3 py-2 pointer-events-none absolute z-20"
+          style={{ left: hoverPos.x + 12, top: hoverPos.y - 30, ...fadeStyle }}
+        >
+          <div className="text-xs font-medium text-white">{hoveredFeature.name}</div>
+          <div className="text-xs text-gray-300">
+            {hoveredFeature.count.toLocaleString()} contacts
+          </div>
+          {hoveredFeature.type === 'county' && (
+            <div className="text-[10px] text-gray-500 mt-0.5">Click to zoom</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
