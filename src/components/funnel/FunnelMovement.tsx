@@ -18,7 +18,7 @@ export function FunnelMovement({ movement, timeframe = 'Past Month' }: FunnelMov
         <span className="text-[10px] text-gray-400 bg-white/5 px-2 py-1 rounded-md">{timeframe}</span>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         {STAGE_ORDER.map((stage, i) => {
           const { entered, left } = movement[stage];
           const enteredPct = maxVal > 0 ? (entered / maxVal) * 100 : 0;
@@ -26,33 +26,35 @@ export function FunnelMovement({ movement, timeframe = 'Past Month' }: FunnelMov
 
           return (
             <div key={stage}>
-              <div className="flex items-center gap-3">
-                <div className="w-[100px] shrink-0 text-xs text-gray-300 font-medium">{STAGE_LABELS[stage]}</div>
-                <div className="flex-1 flex items-center gap-1">
-                  {/* Left count (exited) */}
-                  {left > 0 && (
-                    <span className="text-[10px] font-bold text-rose-400 tabular-nums w-8 text-right">{left}</span>
-                  )}
-                  {/* Entered bar (teal) */}
-                  <div
-                    className="h-6 rounded-sm transition-all duration-500"
-                    style={{ width: `${Math.max(enteredPct, 4)}%`, background: '#14b8a6' }}
-                  />
-                  {/* Left bar (pink) */}
-                  {left > 0 && (
+              <div className="flex items-center gap-2">
+                <div className="w-[90px] shrink-0 text-[11px] text-gray-300 font-medium">{STAGE_LABELS[stage]}</div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-1 h-7">
+                    {/* Left count (exited) — shown before bars */}
+                    {left > 0 && (
+                      <span className="text-[10px] font-bold text-rose-400 tabular-nums min-w-[24px] text-right">{left}</span>
+                    )}
+                    {/* Entered bar (teal) */}
                     <div
-                      className="h-6 rounded-sm transition-all duration-500"
-                      style={{ width: `${Math.max(leftPct, 4)}%`, background: '#f43f5e' }}
+                      className="h-full rounded-sm transition-all duration-500 min-w-[4px]"
+                      style={{ width: `${Math.max(enteredPct, 6)}%`, background: '#14b8a6' }}
                     />
-                  )}
-                  {/* Entered count */}
-                  <span className="text-[10px] font-bold text-teal-400 tabular-nums">{entered}</span>
+                    {/* Left bar (pink) */}
+                    {left > 0 && (
+                      <div
+                        className="h-full rounded-sm transition-all duration-500 min-w-[4px]"
+                        style={{ width: `${Math.max(leftPct, 6)}%`, background: '#f43f5e' }}
+                      />
+                    )}
+                    {/* Entered count — shown after bars */}
+                    <span className="text-[10px] font-bold text-teal-400 tabular-nums min-w-[24px]">{entered}</span>
+                  </div>
                 </div>
               </div>
-              {/* Connector arrow */}
+              {/* Connector */}
               {i < STAGE_ORDER.length - 1 && (
-                <div className="ml-[112px] h-3 flex items-center">
-                  <div className="w-px h-full bg-gray-700 ml-2" />
+                <div className="ml-[96px] h-2 flex items-center">
+                  <div className="w-px h-full bg-gray-700/50 ml-4" />
                 </div>
               )}
             </div>

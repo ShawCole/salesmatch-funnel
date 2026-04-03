@@ -11,7 +11,9 @@ interface FunnelChartProps {
 }
 
 const STAGES = ['targeted', 'awareness', 'interest', 'consideration', 'evaluation'] as const;
-const COLORS = ['#4f46e5', '#6366f1', '#818cf8', '#a5b4fc', '#c7d2fe'];
+
+// Each stage gets progressively narrower to create the funnel taper
+const STAGE_MAX_WIDTH = [100, 75, 60, 45, 32]; // percentage of container
 
 export function FunnelChart({ funnel, onStageClick, onAction, label = 'Today' }: FunnelChartProps) {
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
@@ -26,41 +28,37 @@ export function FunnelChart({ funnel, onStageClick, onAction, label = 'Today' }:
     return () => document.removeEventListener('mousedown', handler);
   }, [menuOpen]);
 
-  const maxCount = funnel.targeted;
-
   return (
     <div className="glass rounded-xl p-5 flex-1">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-bold text-white">Funnel Report <span className="text-gray-400 font-normal">({label})</span></h3>
       </div>
-      <div className="space-y-3">
+      <div className="space-y-1">
         {STAGES.map((stage, i) => {
           const count = funnel[stage];
-          const widthPct = maxCount > 0 ? (count / maxCount) * 100 : 0;
-          // Taper: minimum width so even small counts show
-          const displayWidth = Math.max(widthPct, 8);
+          const barWidth = STAGE_MAX_WIDTH[i];
+          // Gradient from deep indigo to lighter blue
+          const hue = 240 + i * 8;
+          const lightness = 45 + i * 6;
 
           return (
             <div key={stage} className="flex items-center gap-3 group">
               <div className="w-[120px] shrink-0 text-xs text-gray-300 font-medium">
                 {STAGE_LABELS[stage]}
               </div>
-              <div className="flex-1 relative h-8">
+              <div className="flex-1 flex justify-center">
                 <button
                   onClick={() => onStageClick(stage)}
-                  className="h-full rounded-md transition-all duration-300 hover:brightness-110 cursor-pointer relative"
+                  className="h-10 rounded-md transition-all duration-300 hover:brightness-125 cursor-pointer relative"
                   style={{
-                    width: `${displayWidth}%`,
-                    background: `linear-gradient(135deg, ${COLORS[i]}, ${COLORS[Math.min(i + 1, 4)]})`,
-                    clipPath: i === 0 ? undefined : `polygon(2% 0%, 100% 0%, ${100 - i * 1.5}% 100%, 0% 100%)`,
+                    width: `${barWidth}%`,
+                    background: `linear-gradient(180deg, hsl(${hue}, 70%, ${lightness}%), hsl(${hue}, 60%, ${lightness - 8}%))`,
+                    borderRadius: i === 0 ? '8px 8px 4px 4px' : i === STAGES.length - 1 ? '4px 4px 8px 8px' : '4px',
                   }}
-                >
-                  <span className="absolute inset-0 flex items-center justify-center text-[11px] font-bold text-white/90 drop-shadow">
-                    {count.toLocaleString()}
-                  </span>
-                </button>
+                />
               </div>
-              <div className="w-[60px] text-right text-xs font-bold text-gray-200 tabular-nums">
+              <div className="w-[70px] text-right text-xs font-bold text-gray-200 tabular-nums flex items-center justify-end gap-1">
+                <span className="w-px h-4 bg-gray-700" />
                 {count.toLocaleString()}
               </div>
               <div className="relative" ref={menuOpen === stage ? menuRef : undefined}>
