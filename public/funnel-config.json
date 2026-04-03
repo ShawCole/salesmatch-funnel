@@ -9,17 +9,46 @@
     "avgCPC": { "value": 0.85, "trend": -5.3 },
     "influencedAccounts": { "value": 4321, "trend": 8.2 }
   },
+  "stages": [
+    { "id": "searching", "label": "Everyone Searching", "description": "Full intent audience from cookie ocean" },
+    { "id": "tofu", "label": "TOFU Audience", "description": "Served an ad impression (Meta + DSP)" },
+    { "id": "visitors", "label": "Every Visitor", "description": "Hit any tracked page (ad click + organic)" },
+    { "id": "mofu", "label": "MOFU Audience", "description": "Retargeted with social proof + case studies" },
+    { "id": "repeat", "label": "Repeat Visitors", "description": "Visited 2+ times in 14 days" },
+    { "id": "bofu", "label": "BOFU Audience", "description": "Final push — urgency + direct CTA" },
+    { "id": "hot", "label": "Hot Prospects", "description": "3+ clicks, 2+ visits, never converted" },
+    { "id": "converted", "label": "Converted", "description": "Booked call or submitted form" }
+  ],
   "campaigns": [
     {
       "id": "ceo",
       "name": "CEO Avatar",
       "label": "Sales Pain",
       "color": "#6366f1",
-      "adSet": { "platform": "meta", "headline": "Can't find good salespeople?", "impressions": 223000, "clicks": 3100, "spend": 2625, "ctr": 1.39, "cpc": 0.85 },
-      "landingPage": { "url": "salesmatch.co/sales-hiring", "bounceRate": 34, "pageViews": 3100 },
-      "conversion": { "type": "calendly", "booked": 15, "convRate": 21.6 },
-      "funnel": { "targeted": 7128, "awareness": 516, "interest": 420, "consideration": 286, "evaluation": 200 },
-      "movement": { "awareness": { "entered": 48, "left": 0 }, "interest": { "entered": 53, "left": 12 }, "consideration": { "entered": 36, "left": 8 }, "evaluation": { "entered": 24, "left": 0 } },
+      "funnel": { "searching": 7128, "tofu": 3680, "visitors": 1420, "mofu": 1100, "repeat": 680, "bofu": 420, "hot": 186, "converted": 50 },
+      "movement": {
+        "tofu": { "entered": 180, "left": 0 },
+        "visitors": { "entered": 95, "left": 0 },
+        "mofu": { "entered": 72, "left": 15 },
+        "repeat": { "entered": 48, "left": 8 },
+        "bofu": { "entered": 30, "left": 5 },
+        "hot": { "entered": 18, "left": 6 },
+        "converted": { "entered": 12, "left": 0 }
+      },
+      "assets": {
+        "tofu": [
+          { "type": "image", "platform": "meta", "label": "Carousel — Sales Pain", "impressions": 89000, "clicks": 1240, "ctr": 1.39 },
+          { "type": "image", "platform": "dsp", "label": "Banner — Can't Find Salespeople", "impressions": 134000, "clicks": 870, "ctr": 0.65 }
+        ],
+        "mofu": [
+          { "type": "image", "platform": "meta", "label": "Retarget — Client Testimonial", "impressions": 28000, "clicks": 620, "ctr": 2.21 },
+          { "type": "video", "platform": "meta", "label": "Video — Craig Case Study (60s)", "impressions": 18000, "clicks": 410, "ctr": 2.28 }
+        ],
+        "bofu": [
+          { "type": "image", "platform": "meta", "label": "Urgency — Limited Spots", "impressions": 12000, "clicks": 380, "ctr": 3.17 },
+          { "type": "image", "platform": "meta", "label": "Direct CTA — Book Your Call", "impressions": 9000, "clicks": 290, "ctr": 3.22 }
+        ]
+      },
       "audienceLink": "https://salesmatch-explorer.netlify.app/?dataset=sales_revenue"
     },
     {
@@ -27,11 +56,28 @@
       "name": "VP Sales Avatar",
       "label": "Team Turnover",
       "color": "#2563eb",
-      "adSet": { "platform": "meta", "headline": "Losing your best closers?", "impressions": 223000, "clicks": 3200, "spend": 2625, "ctr": 1.43, "cpc": 0.82 },
-      "landingPage": { "url": "salesmatch.co/retention", "bounceRate": 38, "pageViews": 3200 },
-      "conversion": { "type": "calendly", "booked": 12, "convRate": 18.2 },
-      "funnel": { "targeted": 13612, "awareness": 680, "interest": 530, "consideration": 350, "evaluation": 165 },
-      "movement": { "awareness": { "entered": 52, "left": 0 }, "interest": { "entered": 41, "left": 15 }, "consideration": { "entered": 30, "left": 5 }, "evaluation": { "entered": 16, "left": 0 } },
+      "funnel": { "searching": 13612, "tofu": 5200, "visitors": 2100, "mofu": 1650, "repeat": 920, "bofu": 560, "hot": 210, "converted": 32 },
+      "movement": {
+        "tofu": { "entered": 210, "left": 0 },
+        "visitors": { "entered": 112, "left": 0 },
+        "mofu": { "entered": 88, "left": 22 },
+        "repeat": { "entered": 52, "left": 10 },
+        "bofu": { "entered": 32, "left": 8 },
+        "hot": { "entered": 22, "left": 8 },
+        "converted": { "entered": 8, "left": 0 }
+      },
+      "assets": {
+        "tofu": [
+          { "type": "image", "platform": "meta", "label": "Carousel — Losing Closers", "impressions": 112000, "clicks": 1600, "ctr": 1.43 },
+          { "type": "image", "platform": "dsp", "label": "Banner — Replacement Guarantee", "impressions": 111000, "clicks": 720, "ctr": 0.65 }
+        ],
+        "mofu": [
+          { "type": "video", "platform": "meta", "label": "Video — Unlimited Replacement (45s)", "impressions": 32000, "clicks": 720, "ctr": 2.25 }
+        ],
+        "bofu": [
+          { "type": "image", "platform": "meta", "label": "Retarget — Zero Risk Guarantee", "impressions": 14000, "clicks": 440, "ctr": 3.14 }
+        ]
+      },
       "audienceLink": "https://salesmatch-explorer.netlify.app/?dataset=sales_headcount"
     },
     {
@@ -39,11 +85,28 @@
       "name": "Founder Avatar",
       "label": "CSM Cost Reduction",
       "color": "#10b981",
-      "adSet": { "platform": "dsp", "headline": "CSMs from South Africa — 75% less", "impressions": 223000, "clicks": 2900, "spend": 2625, "ctr": 1.30, "cpc": 0.91 },
-      "landingPage": { "url": "salesmatch.co/csm-hiring", "bounceRate": 41, "pageViews": 2900 },
-      "conversion": { "type": "calendly", "booked": 10, "convRate": 15.4 },
-      "funnel": { "targeted": 21428, "awareness": 856, "interest": 642, "consideration": 428, "evaluation": 214 },
-      "movement": { "awareness": { "entered": 58, "left": 0 }, "interest": { "entered": 48, "left": 18 }, "consideration": { "entered": 35, "left": 10 }, "evaluation": { "entered": 20, "left": 0 } },
+      "funnel": { "searching": 21428, "tofu": 8200, "visitors": 3400, "mofu": 2600, "repeat": 1450, "bofu": 880, "hot": 320, "converted": 42 },
+      "movement": {
+        "tofu": { "entered": 320, "left": 0 },
+        "visitors": { "entered": 178, "left": 0 },
+        "mofu": { "entered": 135, "left": 30 },
+        "repeat": { "entered": 82, "left": 15 },
+        "bofu": { "entered": 50, "left": 10 },
+        "hot": { "entered": 32, "left": 10 },
+        "converted": { "entered": 10, "left": 0 }
+      },
+      "assets": {
+        "tofu": [
+          { "type": "image", "platform": "dsp", "label": "Banner — SA CSMs 75% Less", "impressions": 134000, "clicks": 1740, "ctr": 1.30 },
+          { "type": "image", "platform": "meta", "label": "Carousel — CSM Cost Calculator", "impressions": 89000, "clicks": 1160, "ctr": 1.30 }
+        ],
+        "mofu": [
+          { "type": "image", "platform": "meta", "label": "Retarget — SA Team Quality", "impressions": 42000, "clicks": 940, "ctr": 2.24 }
+        ],
+        "bofu": [
+          { "type": "video", "platform": "meta", "label": "Video — Meet Your SA Team (90s)", "impressions": 18000, "clicks": 560, "ctr": 3.11 }
+        ]
+      },
       "audienceLink": "https://salesmatch-explorer.netlify.app/?dataset=csm_revenue"
     },
     {
@@ -51,21 +114,42 @@
       "name": "COO Avatar",
       "label": "Scale Without Hiring US",
       "color": "#f59e0b",
-      "adSet": { "platform": "meta", "headline": "Need more CSMs but can't afford US rates?", "impressions": 223000, "clicks": 3200, "spend": 2625, "ctr": 1.43, "cpc": 0.82 },
-      "landingPage": { "url": "salesmatch.co/scale", "bounceRate": 36, "pageViews": 3200 },
-      "conversion": { "type": "calendly", "booked": 13, "convRate": 19.7 },
-      "funnel": { "targeted": 40702, "awareness": 1628, "interest": 1221, "consideration": 814, "evaluation": 407 },
-      "movement": { "awareness": { "entered": 62, "left": 0 }, "interest": { "entered": 55, "left": 14 }, "consideration": { "entered": 42, "left": 7 }, "evaluation": { "entered": 25, "left": 0 } },
+      "funnel": { "searching": 40702, "tofu": 15600, "visitors": 6400, "mofu": 4900, "repeat": 2750, "bofu": 1680, "hot": 610, "converted": 76 },
+      "movement": {
+        "tofu": { "entered": 580, "left": 0 },
+        "visitors": { "entered": 320, "left": 0 },
+        "mofu": { "entered": 245, "left": 55 },
+        "repeat": { "entered": 155, "left": 28 },
+        "bofu": { "entered": 95, "left": 18 },
+        "hot": { "entered": 58, "left": 18 },
+        "converted": { "entered": 18, "left": 0 }
+      },
+      "assets": {
+        "tofu": [
+          { "type": "image", "platform": "meta", "label": "Carousel — Scale Without US Rates", "impressions": 134000, "clicks": 1920, "ctr": 1.43 },
+          { "type": "image", "platform": "dsp", "label": "Banner — World-Class CSMs", "impressions": 89000, "clicks": 1280, "ctr": 1.44 }
+        ],
+        "mofu": [
+          { "type": "video", "platform": "meta", "label": "Video — Client Saves 75% (60s)", "impressions": 52000, "clicks": 1170, "ctr": 2.25 }
+        ],
+        "bofu": [
+          { "type": "image", "platform": "meta", "label": "Direct CTA — Get Your CSM Team", "impressions": 22000, "clicks": 680, "ctr": 3.09 }
+        ]
+      },
       "audienceLink": "https://salesmatch-explorer.netlify.app/?dataset=csm_headcount"
     }
   ],
   "aggregate": {
-    "funnel": { "targeted": 82870, "awareness": 3680, "interest": 2813, "consideration": 1878, "evaluation": 986 },
+    "funnel": { "searching": 82870, "tofu": 32680, "visitors": 13320, "mofu": 10250, "repeat": 5800, "bofu": 3540, "hot": 1326, "converted": 200 },
+    "organicVisitors": 4200,
     "movement": {
-      "awareness": { "entered": 220, "left": 0 },
-      "interest": { "entered": 197, "left": 59 },
-      "consideration": { "entered": 143, "left": 30 },
-      "evaluation": { "entered": 85, "left": 0 }
+      "tofu": { "entered": 1290, "left": 0 },
+      "visitors": { "entered": 705, "left": 0 },
+      "mofu": { "entered": 540, "left": 122 },
+      "repeat": { "entered": 337, "left": 61 },
+      "bofu": { "entered": 207, "left": 41 },
+      "hot": { "entered": 130, "left": 42 },
+      "converted": { "entered": 48, "left": 0 }
     }
   }
 }
