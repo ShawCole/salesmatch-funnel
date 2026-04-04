@@ -16,6 +16,7 @@ function loadOverrides(): Record<string, number | null> {
 export function PipelineDashboard() {
   const [config, setConfig] = useState<PipelineConfig | null>(null);
   const [overrides, setOverrides] = useState<Record<string, number | null>>(loadOverrides);
+  const [activePipeline, setActivePipeline] = useState<string>('all');
   const isAdmin = new URLSearchParams(window.location.search).get('admin') === 'true';
 
   useEffect(() => {
@@ -38,9 +39,13 @@ export function PipelineDashboard() {
     );
   }
 
+  const filteredConfig = activePipeline === 'all'
+    ? config
+    : { ...config, pipelines: config.pipelines.filter(p => p.id === activePipeline) };
+
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
-      <div className="max-w-[1400px] mx-auto p-4 md:p-6 space-y-4 md:space-y-5">
+    <div className="min-h-screen bg-gray-950 text-white overflow-y-auto">
+      <div className="max-w-[1400px] mx-auto p-4 md:p-6 space-y-4 md:space-y-5 pb-24">
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
@@ -66,15 +71,43 @@ export function PipelineDashboard() {
           </div>
         </div>
 
+        {/* Pipeline filter */}
+        <div className="flex gap-1.5 flex-wrap">
+          <button
+            onClick={() => setActivePipeline('all')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              activePipeline === 'all'
+                ? 'bg-purple-600/30 text-purple-200 border border-purple-500/30'
+                : 'glass text-gray-400 border border-white/5 hover:text-white hover:border-white/10'
+            }`}
+          >
+            All Pipelines
+          </button>
+          {config.pipelines.map(p => (
+            <button
+              key={p.id}
+              onClick={() => setActivePipeline(p.id)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+                activePipeline === p.id
+                  ? 'bg-white/10 text-white border border-white/15'
+                  : 'glass text-gray-400 border border-white/5 hover:text-white hover:border-white/10'
+              }`}
+            >
+              <span className="w-2 h-2 rounded-full shrink-0" style={{ background: p.color }} />
+              {p.name}
+            </button>
+          ))}
+        </div>
+
         {/* Highlight cards */}
         <HighlightBar data={config.highlights} />
 
         {/* Visual funnel */}
-        <FunnelChart config={config} overrides={overrides} />
+        <FunnelChart config={filteredConfig} overrides={overrides} />
 
         {/* Pipeline detail rows */}
         <div className="space-y-3">
-          {config.pipelines.map(p => (
+          {filteredConfig.pipelines.map(p => (
             <PipelineRow
               key={p.id}
               pipeline={p}
