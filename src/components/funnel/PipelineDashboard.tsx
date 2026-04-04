@@ -44,7 +44,7 @@ export function PipelineDashboard() {
     : { ...config, pipelines: config.pipelines.filter(p => p.id === activePipeline) };
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white overflow-y-auto">
+    <div className="fixed inset-0 bg-gray-950 text-white overflow-y-auto z-[100]">
       <div className="max-w-[1400px] mx-auto p-4 md:p-6 space-y-4 md:space-y-5 pb-24">
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-2">
