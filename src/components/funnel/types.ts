@@ -21,79 +21,57 @@ export interface Asset {
   ctr: number;
 }
 
-export interface StageMovement {
-  entered: number;
-  left: number;
+export interface PipelineNode {
+  count: number | null;
+  refreshDays?: number;
+  status?: string;
+  landingPage?: string;
 }
 
-export interface FunnelStages {
-  searching: number;
-  tofu: number;
-  visitors: number;
-  mofu: number;
-  repeat: number;
-  bofu: number;
-  hot: number;
-  converted: number;
+export interface PipelineNodes {
+  intentCore: PipelineNode;
+  metaAudience: PipelineNode;
+  lpVisitors: PipelineNode;
+  retargetAudience: PipelineNode;
+  converted: PipelineNode;
 }
 
-export interface Movement {
-  tofu: StageMovement;
-  visitors: StageMovement;
-  mofu: StageMovement;
-  repeat: StageMovement;
-  bofu: StageMovement;
-  hot: StageMovement;
-  converted: StageMovement;
-}
-
-export interface CampaignAssets {
+export interface PipelineAssets {
   tofu?: Asset[];
-  mofu?: Asset[];
   bofu?: Asset[];
 }
 
-export interface StageDefinition {
-  id: string;
-  label: string;
-  description: string;
-}
-
-export interface Campaign {
+export interface Pipeline {
   id: string;
   name: string;
-  label: string;
+  description: string;
   color: string;
-  funnel: FunnelStages;
-  movement: Movement;
-  assets: CampaignAssets;
+  nodes: PipelineNodes;
+  tofuCampaign: string;
+  bofuCampaign: string;
+  assets: PipelineAssets;
   audienceLink: string;
 }
 
-export interface FunnelConfig {
+export interface PipelineConfig {
   client: string;
   timeframe: string;
   highlights: Highlights;
-  stages: StageDefinition[];
-  campaigns: Campaign[];
-  aggregate: {
-    funnel: FunnelStages;
-    organicVisitors: number;
-    movement: Movement;
-  };
+  pipelines: Pipeline[];
 }
 
-export const STAGE_ORDER: (keyof FunnelStages)[] = ['searching', 'tofu', 'visitors', 'mofu', 'repeat', 'bofu', 'hot', 'converted'];
+export const NODE_ORDER: (keyof PipelineNodes)[] = [
+  'intentCore',
+  'metaAudience',
+  'lpVisitors',
+  'retargetAudience',
+  'converted',
+];
 
-export const STAGE_COLORS: Record<string, string> = {
-  searching: '#6366f1',
-  tofu: '#818cf8',
-  visitors: '#3b82f6',
-  mofu: '#2563eb',
-  repeat: '#14b8a6',
-  bofu: '#10b981',
-  hot: '#f59e0b',
-  converted: '#ef4444',
+export const NODE_META: Record<keyof PipelineNodes, { label: string; description: string; icon: string }> = {
+  intentCore: { label: 'Intent Audience', description: 'IntentCore 3rd party', icon: '🔍' },
+  metaAudience: { label: 'Ad Audience', description: 'Meta Custom Audience', icon: '📡' },
+  lpVisitors: { label: 'LP Visitors', description: 'ArkData pixel', icon: '👁' },
+  retargetAudience: { label: 'Retarget', description: 'Pixel → Meta sync', icon: '🎯' },
+  converted: { label: 'Converted', description: 'Booked / submitted', icon: '✓' },
 };
-
-export const MOVEMENT_STAGES: (keyof Movement)[] = ['tofu', 'visitors', 'mofu', 'repeat', 'bofu', 'hot', 'converted'];

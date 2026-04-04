@@ -1,86 +1,117 @@
-import { MoreHorizontal } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
-import type { FunnelStages, StageDefinition } from './types';
-import { STAGE_ORDER, STAGE_COLORS } from './types';
+import type { PipelineConfig, PipelineNodes } from './types';
+import { NODE_ORDER, NODE_META } from './types';
 
-interface FunnelChartProps {
-  funnel: FunnelStages;
-  stages: StageDefinition[];
-  onStageClick: (stage: string) => void;
-  onAction: (stage: string, action: string) => void;
-  label?: string;
+const STAGE_COLORS = ['#6366f1', '#818cf8', '#3b82f6', '#14b8a6', '#10b981'];
+const STAGE_WIDTHS = [100, 68, 42, 24, 12];
+
+function fmtCount(n: number | null): string {
+  if (n == null) return '—';
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return n.toLocaleString();
 }
 
-// Progressive taper widths for each stage
-const STAGE_WIDTHS = [100, 78, 62, 50, 40, 32, 22, 16];
+interface FunnelChartProps {
+  config: PipelineConfig;
+  overrides: Record<string, number | null>;
+}
 
-export function FunnelChart({ funnel, stages, onStageClick, onAction, label = 'Today' }: FunnelChartProps) {
-  const [menuOpen, setMenuOpen] = useState<string | null>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
+export function FunnelChart({ config, overrides }: FunnelChartProps) {
+  // Aggregate counts across all pipelines
+  const getCount = (pipelineId: string, nodeId: string): number | null => {
+    const key = `${pipelineId}.${nodeId}`;
+    if (key in overrides) return overrides[key];
+    const p = config.pipelines.find(p => p.id === pipelineId);
+    if (!p) return null;
+    return p.nodes[nodeId as keyof PipelineNodes]?.count ?? null;
+  };
 
-  useEffect(() => {
-    if (!menuOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(null);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [menuOpen]);
-
-  const stageMap = new Map(stages.map(s => [s.id, s]));
+  const aggregates = NODE_ORDER.map(nodeId => {
+    let sum: number | null = null;
+    for (const p of config.pipelines) {
+      const c = getCount(p.id, nodeId);
+      if (c != null) sum = (sum ?? 0) + c;
+    }
+    return { nodeId, count: sum };
+  });
 
   return (
-    <div className="glass rounded-xl p-5 flex-1">
+    <div className="glass rounded-xl p-4 md:p-5">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-bold text-white">Funnel Report <span className="text-gray-400 font-normal">({label})</span></h3>
+        <h3 className="text-sm font-bold text-white">Pipeline Overview</h3>
+        <span className="text-[10px] text-gray-400 bg-white/5 px-2 py-1 rounded-md">{config.timeframe}</span>
       </div>
-      <div className="space-y-1">
-        {STAGE_ORDER.map((stageId, i) => {
-          const count = funnel[stageId];
+
+      <div className="space-y-1.5 md:space-y-2">
+        {aggregates.map(({ nodeId, count }, i) => {
+          const meta = NODE_META[nodeId];
           const barWidth = STAGE_WIDTHS[i];
-          const color = STAGE_COLORS[stageId];
-          const stageDef = stageMap.get(stageId);
+          const color = STAGE_COLORS[i];
+          const prevCount = i > 0 ? aggregates[i - 1].count : null;
+          const convRate = prevCount != null && prevCount > 0 && count != null
+            ? ((count / prevCount) * 100).toFixed(1)
+            : null;
 
           return (
-            <div key={stageId} className="flex items-center gap-3 group">
-              <div className="w-[130px] shrink-0">
-                <div className="text-[11px] text-gray-300 font-medium">{stageDef?.label || stageId}</div>
-                <div className="text-[9px] text-gray-500">{stageDef?.description || ''}</div>
+            <div key={nodeId} className="flex items-center gap-2 md:gap-3 group">
+              {/* Label */}
+              <div className="w-[80px] md:w-[120px] shrink-0">
+                <div className="text-[10px] md:text-[11px] text-gray-200 font-medium">{meta.label}</div>
+                <div className="text-[8px] text-gray-500 hidden md:block">{meta.description}</div>
               </div>
+
+              {/* Bar */}
               <div className="flex-1 flex justify-center">
-                <button
-                  onClick={() => onStageClick(stageId)}
-                  className="h-9 rounded-md transition-all duration-300 hover:brightness-125 cursor-pointer"
+                <div
+                  className="h-8 md:h-10 rounded-md transition-all duration-500 hover:brightness-125 relative overflow-hidden"
                   style={{
                     width: `${barWidth}%`,
-                    background: `linear-gradient(135deg, ${color}, ${color}aa)`,
-                    borderRadius: i === 0 ? '6px 6px 3px 3px' : i === STAGE_ORDER.length - 1 ? '3px 3px 6px 6px' : '3px',
+                    background: `linear-gradient(135deg, ${color}, ${color}cc)`,
+                    borderRadius: i === 0 ? '8px 8px 4px 4px' : i === aggregates.length - 1 ? '4px 4px 8px 8px' : '4px',
                   }}
-                />
-              </div>
-              <div className="w-[65px] text-right text-[11px] font-bold text-gray-200 tabular-nums flex items-center justify-end gap-1.5">
-                <span className="w-px h-3 bg-gray-700" />
-                {count.toLocaleString()}
-              </div>
-              <div className="relative" ref={menuOpen === stageId ? menuRef : undefined}>
-                <button
-                  onClick={(e) => { e.stopPropagation(); setMenuOpen(menuOpen === stageId ? null : stageId); }}
-                  className="p-1 rounded hover:bg-white/10 text-gray-500 hover:text-white transition-colors opacity-0 group-hover:opacity-100"
                 >
-                  <MoreHorizontal size={14} />
-                </button>
-                {menuOpen === stageId && (
-                  <div className="absolute right-0 top-full mt-1 z-50 w-44 rounded-xl border border-white/10 bg-gray-900/95 backdrop-blur-xl shadow-2xl py-1">
-                    <button onClick={() => { onAction(stageId, 'map'); setMenuOpen(null); }} className="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-white/5 hover:text-white transition-colors">View on Map</button>
-                    <button onClick={() => { onAction(stageId, 'assets'); setMenuOpen(null); }} className="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-white/5 hover:text-white transition-colors">View Assets</button>
-                    <button className="w-full text-left px-3 py-2 text-xs text-gray-500 cursor-not-allowed">Create Audience <span className="text-[9px] text-gray-600">Soon</span></button>
-                    <button className="w-full text-left px-3 py-2 text-xs text-gray-500 cursor-not-allowed">Export CSV <span className="text-[9px] text-gray-600">Soon</span></button>
-                  </div>
+                  {/* Subtle inner shine */}
+                  <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent" style={{ height: '40%' }} />
+                </div>
+              </div>
+
+              {/* Count + rate */}
+              <div className="w-[70px] md:w-[90px] text-right shrink-0">
+                <div className="text-[11px] md:text-sm font-bold text-white tabular-nums">{fmtCount(count)}</div>
+                {convRate && (
+                  <div className="text-[8px] text-gray-500 tabular-nums">{convRate}% from above</div>
                 )}
               </div>
             </div>
           );
         })}
+      </div>
+
+      {/* Per-pipeline breakdown */}
+      <div className="mt-4 pt-3 border-t border-white/5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          {config.pipelines.map(p => {
+            const ic = getCount(p.id, 'intentCore');
+            const meta = getCount(p.id, 'metaAudience');
+            const matchRate = ic != null && meta != null && ic > 0 ? ((meta / ic) * 100).toFixed(1) : null;
+
+            return (
+              <div key={p.id} className="flex items-center gap-2 p-2 rounded-lg bg-white/[0.02] border border-white/5">
+                <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: p.color }} />
+                <div className="flex-1 min-w-0">
+                  <div className="text-[10px] font-bold text-gray-200 truncate">{p.name}</div>
+                  <div className="text-[8px] text-gray-500 truncate">{p.description}</div>
+                </div>
+                <div className="text-right shrink-0">
+                  <div className="text-[10px] font-bold text-white tabular-nums">{fmtCount(ic)}</div>
+                  {matchRate && (
+                    <div className="text-[8px] text-gray-500 tabular-nums">{matchRate}% matched</div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

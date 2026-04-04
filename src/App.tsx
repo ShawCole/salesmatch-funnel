@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { FilterProvider } from './contexts/FilterContext';
-import { FunnelDashboard } from './components/funnel/FunnelDashboard';
+import { PipelineDashboard } from './components/funnel/PipelineDashboard';
 import { MapView } from './components/MapView';
 import { FilterBar } from './components/FilterBar';
 import { StatsBar } from './components/StatsBar';
@@ -128,7 +128,7 @@ function App() {
     return (
       <>
         <ViewToggle />
-        <FunnelDashboard />
+        <PipelineDashboard />
       </>
     );
   }

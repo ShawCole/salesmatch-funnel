@@ -10,11 +10,11 @@ function fmt(value: number, prefix = '', suffix = ''): string {
 function HighlightCard({ label, value, trend }: { label: string; value: string; trend: number }) {
   const isPositive = trend >= 0;
   return (
-    <div className="glass rounded-xl p-4 flex-1 min-w-[130px]">
-      <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">{label}</div>
-      <div className="text-xl font-bold text-white mb-1">{value}</div>
-      <div className={`flex items-center gap-1 text-xs font-semibold ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
-        {isPositive ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+    <div className="glass rounded-xl p-3 md:p-4 flex-1 min-w-[100px] md:min-w-[130px]">
+      <div className="text-[9px] md:text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1 md:mb-2">{label}</div>
+      <div className="text-base md:text-xl font-bold text-white mb-0.5 md:mb-1">{value}</div>
+      <div className={`flex items-center gap-1 text-[10px] md:text-xs font-semibold ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
+        {isPositive ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
         {isPositive ? '+' : ''}{trend.toFixed(1)}%
       </div>
     </div>
