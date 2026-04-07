@@ -1,8 +1,8 @@
 import type { PipelineConfig, PipelineNodes } from './types';
 import { NODE_ORDER, NODE_META } from './types';
 
-const STAGE_COLORS = ['#6366f1', '#818cf8', '#3b82f6', '#14b8a6', '#10b981'];
-const STAGE_WIDTHS = [100, 68, 42, 24, 12];
+const STAGE_COLORS = ['#a855f7', '#6366f1', '#818cf8', '#3b82f6', '#14b8a6', '#10b981'];
+const STAGE_WIDTHS = [100, 72, 50, 32, 18, 8];
 
 function fmtCount(n: number | null): string {
   if (n == null) return '—';
@@ -17,7 +17,6 @@ interface FunnelChartProps {
 }
 
 export function FunnelChart({ config, overrides }: FunnelChartProps) {
-  // Aggregate counts across all pipelines
   const getCount = (pipelineId: string, nodeId: string): number | null => {
     const key = `${pipelineId}.${nodeId}`;
     if (key in overrides) return overrides[key];
@@ -26,7 +25,9 @@ export function FunnelChart({ config, overrides }: FunnelChartProps) {
     return p.nodes[nodeId as keyof PipelineNodes]?.count ?? null;
   };
 
-  const aggregates = NODE_ORDER.map(nodeId => {
+  const tamCount = config.tam?.count ?? null;
+
+  const pipelineAggregates = NODE_ORDER.map(nodeId => {
     let sum: number | null = null;
     for (const p of config.pipelines) {
       const c = getCount(p.id, nodeId);
@@ -34,6 +35,32 @@ export function FunnelChart({ config, overrides }: FunnelChartProps) {
     }
     return { nodeId, count: sum };
   });
+
+  // Build full stage list: TAM first, then pipeline nodes
+  const stages: { key: string; label: string; description: string; count: number | null }[] = [];
+
+  if (tamCount != null) {
+    stages.push({
+      key: 'tam',
+      label: 'Total Addressable Market',
+      description: config.tam!.description,
+      count: tamCount,
+    });
+  }
+
+  for (const agg of pipelineAggregates) {
+    const meta = NODE_META[agg.nodeId];
+    stages.push({
+      key: agg.nodeId,
+      label: meta.label,
+      description: meta.description,
+      count: agg.count,
+    });
+  }
+
+  // If no TAM, use the original 5-stage colors/widths
+  const colors = tamCount != null ? STAGE_COLORS : STAGE_COLORS.slice(1);
+  const widths = tamCount != null ? STAGE_WIDTHS : STAGE_WIDTHS.slice(1);
 
   return (
     <div className="glass rounded-xl p-4 md:p-5">
@@ -43,21 +70,26 @@ export function FunnelChart({ config, overrides }: FunnelChartProps) {
       </div>
 
       <div className="space-y-1.5 md:space-y-2">
-        {aggregates.map(({ nodeId, count }, i) => {
-          const meta = NODE_META[nodeId];
-          const barWidth = STAGE_WIDTHS[i];
-          const color = STAGE_COLORS[i];
-          const prevCount = i > 0 ? aggregates[i - 1].count : null;
-          const convRate = prevCount != null && prevCount > 0 && count != null
-            ? ((count / prevCount) * 100).toFixed(1)
+        {stages.map((stage, i) => {
+          const barWidth = widths[i] ?? 6;
+          const color = colors[i] ?? '#10b981';
+          const prevCount = i > 0 ? stages[i - 1].count : null;
+          const convRate = prevCount != null && prevCount > 0 && stage.count != null
+            ? ((stage.count / prevCount) * 100).toFixed(1)
             : null;
 
+          const isTam = stage.key === 'tam';
+
           return (
-            <div key={nodeId} className="flex items-center gap-2 md:gap-3 group">
+            <div key={stage.key} className="flex items-center gap-2 md:gap-3 group">
               {/* Label */}
               <div className="w-[80px] md:w-[120px] shrink-0">
-                <div className="text-[10px] md:text-[11px] text-gray-200 font-medium">{meta.label}</div>
-                <div className="text-[8px] text-gray-500 hidden md:block">{meta.description}</div>
+                <div className={`text-[10px] md:text-[11px] font-medium ${isTam ? 'text-purple-300' : 'text-gray-200'}`}>
+                  {isTam ? 'TAM' : stage.label}
+                </div>
+                <div className="text-[8px] text-gray-500 hidden md:block">
+                  {isTam ? 'Total Addressable Market' : stage.description}
+                </div>
               </div>
 
               {/* Bar */}
@@ -66,26 +98,49 @@ export function FunnelChart({ config, overrides }: FunnelChartProps) {
                   className="h-8 md:h-10 rounded-md transition-all duration-500 hover:brightness-125 relative overflow-hidden"
                   style={{
                     width: `${barWidth}%`,
-                    background: `linear-gradient(135deg, ${color}, ${color}cc)`,
-                    borderRadius: i === 0 ? '8px 8px 4px 4px' : i === aggregates.length - 1 ? '4px 4px 8px 8px' : '4px',
+                    background: isTam
+                      ? `linear-gradient(135deg, ${color}, #7c3aed)`
+                      : `linear-gradient(135deg, ${color}, ${color}cc)`,
+                    borderRadius: i === 0 ? '8px 8px 4px 4px' : i === stages.length - 1 ? '4px 4px 8px 8px' : '4px',
                   }}
                 >
-                  {/* Subtle inner shine */}
                   <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent" style={{ height: '40%' }} />
                 </div>
               </div>
 
               {/* Count + rate */}
               <div className="w-[70px] md:w-[90px] text-right shrink-0">
-                <div className="text-[11px] md:text-sm font-bold text-white tabular-nums">{fmtCount(count)}</div>
+                <div className={`text-[11px] md:text-sm font-bold tabular-nums ${isTam ? 'text-purple-200' : 'text-white'}`}>
+                  {fmtCount(stage.count)}
+                </div>
                 {convRate && (
-                  <div className="text-[8px] text-gray-500 tabular-nums">{convRate}% from above</div>
+                  <div className="text-[8px] text-gray-500 tabular-nums">
+                    {isTam ? '' : `${convRate}% from above`}
+                  </div>
+                )}
+                {/* Show "~3% in-market" on first intent row after TAM */}
+                {i === 1 && isTam === false && tamCount != null && stage.count != null && (
+                  <div className="text-[8px] text-amber-400/70 tabular-nums">
+                    {((stage.count / tamCount) * 100).toFixed(1)}% in-market
+                  </div>
                 )}
               </div>
             </div>
           );
         })}
       </div>
+
+      {/* TAM context callout */}
+      {tamCount != null && (
+        <div className="mt-3 px-3 py-2 rounded-lg bg-purple-500/5 border border-purple-500/10">
+          <div className="text-[9px] text-purple-300/80">
+            <span className="font-bold">TAM:</span> {config.tam!.description}
+            <span className="text-gray-500 ml-2">
+              — ~3% actively searching, 7–10% would buy
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Per-pipeline breakdown */}
       <div className="mt-4 pt-3 border-t border-white/5">
@@ -94,6 +149,7 @@ export function FunnelChart({ config, overrides }: FunnelChartProps) {
             const ic = getCount(p.id, 'intentCore');
             const meta = getCount(p.id, 'metaAudience');
             const matchRate = ic != null && meta != null && ic > 0 ? ((meta / ic) * 100).toFixed(1) : null;
+            const tamPct = tamCount != null && ic != null ? ((ic / tamCount) * 100).toFixed(1) : null;
 
             return (
               <div key={p.id} className="flex items-center gap-2 p-2 rounded-lg bg-white/[0.02] border border-white/5">
@@ -104,6 +160,9 @@ export function FunnelChart({ config, overrides }: FunnelChartProps) {
                 </div>
                 <div className="text-right shrink-0">
                   <div className="text-[10px] font-bold text-white tabular-nums">{fmtCount(ic)}</div>
+                  {tamPct && (
+                    <div className="text-[8px] text-amber-400/60 tabular-nums">{tamPct}% of TAM</div>
+                  )}
                   {matchRate && (
                     <div className="text-[8px] text-gray-500 tabular-nums">{matchRate}% matched</div>
                   )}

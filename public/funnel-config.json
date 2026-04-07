@@ -1,6 +1,10 @@
 {
   "client": "Sales Match",
   "timeframe": "Past Month",
+  "tam": {
+    "count": 15596,
+    "description": "CXOs in Marketing Agencies, 1–250 headcount, verified personal email"
+  },
   "highlights": {
     "totalSpend": { "value": 10500, "trend": 8.2 },
     "impressions": { "value": 892000, "trend": -2.1 },
@@ -13,15 +17,16 @@
     {
       "id": "sales_hires",
       "name": "Sales Hires",
-      "description": "CXOs < 250 headcount — sales hiring intent",
+      "description": "In-market ICP — sales hiring intent (premade audience, 7-day refresh)",
       "color": "#6366f1",
       "nodes": {
-        "intentCore": { "count": 32445, "refreshDays": 7 },
-        "metaAudience": { "count": 18100, "status": "populating" },
+        "intentCore": { "count": 386, "refreshDays": 7 },
+        "metaAudience": { "count": null, "status": "pending sync" },
         "lpVisitors": { "count": null, "landingPage": "salesmatch.co/sales-hiring" },
         "retargetAudience": { "count": null },
         "converted": { "count": 0 }
       },
+      "outreach": ["meta", "dsp", "cold_email", "linkedin_inmail"],
       "tofuCampaign": "Sales Pain — TOFU",
       "bofuCampaign": "Sales Pain — Retarget",
       "assets": {
@@ -39,15 +44,16 @@
     {
       "id": "csm_hires",
       "name": "CSM Hires",
-      "description": "CXOs < 250 headcount — CSM hiring intent",
+      "description": "In-market ICP — CSM hiring intent (keyword-based audience, 7-day refresh)",
       "color": "#10b981",
       "nodes": {
-        "intentCore": { "count": 64792, "refreshDays": 7 },
-        "metaAudience": { "count": 35900, "status": "populating" },
+        "intentCore": { "count": 579, "refreshDays": 7 },
+        "metaAudience": { "count": null, "status": "pending sync" },
         "lpVisitors": { "count": null, "landingPage": "salesmatch.co/csm-hiring" },
         "retargetAudience": { "count": null },
         "converted": { "count": 0 }
       },
+      "outreach": ["meta", "dsp", "cold_email", "linkedin_inmail"],
       "tofuCampaign": "CSM Cost — TOFU",
       "bofuCampaign": "CSM Cost — Retarget",
       "assets": {

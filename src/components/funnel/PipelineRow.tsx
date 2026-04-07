@@ -287,6 +287,30 @@ export function PipelineRow({ pipeline, isAdmin, overrides, onOverride }: Pipeli
             </div>
           ) : null}
 
+          {/* Outreach channels */}
+          {pipeline.outreach && pipeline.outreach.length > 0 && (
+            <div className="pt-2 border-t border-white/5">
+              <div className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-2">Outreach Channels</div>
+              <div className="flex flex-wrap gap-1.5">
+                {pipeline.outreach.map(ch => {
+                  const channelMeta: Record<string, { label: string; color: string }> = {
+                    meta: { label: 'Meta Ads', color: '#1877F2' },
+                    dsp: { label: 'DSP', color: '#10b981' },
+                    cold_email: { label: 'Cold Email', color: '#f59e0b' },
+                    linkedin_inmail: { label: 'LinkedIn InMail', color: '#0A66C2' },
+                  };
+                  const m = channelMeta[ch] || { label: ch, color: '#888' };
+                  return (
+                    <span key={ch} className="flex items-center gap-1 text-[9px] px-2 py-1 rounded-md bg-white/5 border border-white/5">
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: m.color }} />
+                      <span className="text-gray-300">{m.label}</span>
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Map link */}
           <div className="pt-2 border-t border-white/5">
             <a href={pipeline.audienceLink} target="_blank" rel="noopener noreferrer" className="text-[10px] text-purple-400 hover:text-purple-300 transition-colors">

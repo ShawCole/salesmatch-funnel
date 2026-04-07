@@ -47,15 +47,22 @@ export interface Pipeline {
   description: string;
   color: string;
   nodes: PipelineNodes;
+  outreach?: string[];
   tofuCampaign: string;
   bofuCampaign: string;
   assets: PipelineAssets;
   audienceLink: string;
 }
 
+export interface TAM {
+  count: number;
+  description: string;
+}
+
 export interface PipelineConfig {
   client: string;
   timeframe: string;
+  tam?: TAM;
   highlights: Highlights;
   pipelines: Pipeline[];
 }
