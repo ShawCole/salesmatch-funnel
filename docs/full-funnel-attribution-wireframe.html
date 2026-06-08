@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Full-Funnel Attribution Dashboard — Interactive Mockup</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #e2e8f0;
+      line-height: 1.5;
+    }
+
+    /* Layout */
+    .app { display: flex; height: 100vh; }
+    .sidebar {
+      width: 280px;
+      background: rgba(15, 23, 42, 0.8);
+      border-right: 1px solid rgba(148, 163, 184, 0.1);
+      padding: 24px;
+      overflow-y: auto;
+    }
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .header {
+      background: rgba(15, 23, 42, 0.6);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 100;
+    }
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+    }
+
+    /* Header */
+    h1 {
+      font-size: 20px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #a855f7 0%, #3b82f6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header-controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    /* Sidebar */
+    .sidebar h2 {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-top: 20px;
+      margin-bottom: 12px;
+      letter-spacing: 0.5px;
+    }
+
+    .sidebar h2:first-child { margin-top: 0; }
+
+    .sidebar-item {
+      padding: 10px 12px;
+      margin-bottom: 4px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      color: #cbd5e1;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .sidebar-item:hover {
+      background: rgba(148, 163, 184, 0.1);
+      color: #e2e8f0;
+    }
+
+    .sidebar-item.active {
+      background: rgba(168, 85, 247, 0.15);
+      color: #a855f7;
+      font-weight: 500;
+    }
+
+    .sidebar-item-icon { font-size: 14px; }
+
+    /* Buttons */
+    button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #a855f7 0%, #3b82f6 100%);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
+    }
+
+    .btn-secondary {
+      background: rgba(148, 163, 184, 0.1);
+      color: #cbd5e1;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(148, 163, 184, 0.15);
+      color: #e2e8f0;
+    }
+
+    select {
+      padding: 8px 12px;
+      background: rgba(51, 65, 85, 0.5);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 6px;
+      color: #cbd5e1;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    /* Cards */
+    .card {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      transition: all 0.2s ease;
+    }
+
+    .card:hover {
+      border-color: rgba(148, 163, 184, 0.2);
+      background: rgba(30, 41, 59, 0.8);
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Funnel */
+    .funnel-stage {
+      display: flex;
+      align-items: center;
+      margin-bottom: 12px;
+      gap: 12px;
+    }
+
+    .funnel-stage-label {
+      width: 140px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #cbd5e1;
+    }
+
+    .funnel-stage-bar {
+      flex: 1;
+      height: 32px;
+      background: linear-gradient(90deg, rgba(168, 85, 247, 0.2), rgba(59, 130, 246, 0.2));
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .funnel-stage-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #a855f7, #3b82f6);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 8px;
+      transition: width 0.6s ease;
+    }
+
+    .funnel-stage-count {
+      font-size: 12px;
+      font-weight: 600;
+      color: white;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    .funnel-stage-info {
+      width: 100px;
+      text-align: right;
+    }
+
+    .funnel-stage-info-count {
+      font-size: 13px;
+      font-weight: 600;
+      color: #e2e8f0;
+    }
+
+    .funnel-stage-info-rate {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-top: 2px;
+    }
+
+    /* Platform Breakdown */
+    .platform-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .platform-badge {
+      padding: 8px 12px;
+      background: rgba(148, 163, 184, 0.05);
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      border-radius: 6px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .platform-badge:hover {
+      background: rgba(148, 163, 184, 0.1);
+      border-color: rgba(168, 85, 247, 0.3);
+    }
+
+    .platform-badge-icon {
+      font-size: 16px;
+      margin-bottom: 4px;
+    }
+
+    .platform-badge-name {
+      font-size: 11px;
+      font-weight: 500;
+      color: #cbd5e1;
+      margin-bottom: 4px;
+    }
+
+    .platform-badge-count {
+      font-size: 12px;
+      font-weight: 600;
+      color: #e2e8f0;
+    }
+
+    /* Real-Time Feed */
+    .feed-item {
+      padding: 12px;
+      background: rgba(51, 65, 85, 0.3);
+      border-left: 2px solid rgba(168, 85, 247, 0.3);
+      margin-bottom: 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-10px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .feed-item.pulse {
+      animation: pulse 0.5s ease;
+    }
+
+    @keyframes pulse {
+      0%, 100% { background: rgba(51, 65, 85, 0.3); }
+      50% { background: rgba(168, 85, 247, 0.15); }
+    }
+
+    .feed-item-text { color: #cbd5e1; }
+
+    .feed-item-value {
+      font-weight: 600;
+      color: #10b981;
+    }
+
+    /* Attribution Model Toggle */
+    .model-toggle {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .model-btn {
+      padding: 8px 12px;
+      background: rgba(51, 65, 85, 0.3);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      color: #cbd5e1;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .model-btn.active {
+      background: rgba(168, 85, 247, 0.2);
+      border-color: rgba(168, 85, 247, 0.5);
+      color: #a855f7;
+    }
+
+    .model-btn:hover {
+      border-color: rgba(168, 85, 247, 0.3);
+    }
+
+    /* Highlight Metrics */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .metric-card {
+      background: rgba(51, 65, 85, 0.3);
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      border-radius: 6px;
+      padding: 12px;
+    }
+
+    .metric-label {
+      font-size: 11px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .metric-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: #e2e8f0;
+      margin-bottom: 4px;
+    }
+
+    .metric-delta {
+      font-size: 11px;
+      color: #10b981;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.2);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(148, 163, 184, 0.3);
+    }
+
+    .info-text {
+      font-size: 11px;
+      color: #64748b;
+      margin-top: 12px;
+      padding: 8px;
+      background: rgba(148, 163, 184, 0.05);
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <h2>Workspaces</h2>
+      <div class="sidebar-item active">
+        <span class="sidebar-item-icon">🏢</span>
+        <span>Acme Corp</span>
+      </div>
+      <div class="sidebar-item">
+        <span class="sidebar-item-icon">🏢</span>
+        <span>TechStart Inc</span>
+      </div>
+
+      <h2>Campaign</h2>
+      <div class="sidebar-item active">
+        <span class="sidebar-item-icon">🎯</span>
+        <span>Summer Campaign 2026</span>
+      </div>
+      <div class="sidebar-item">
+        <span class="sidebar-item-icon">🎯</span>
+        <span>Brand Awareness Q2</span>
+      </div>
+
+      <h2>Tools</h2>
+      <div class="sidebar-item">
+        <span class="sidebar-item-icon">⚙️</span>
+        <span>Settings</span>
+      </div>
+      <div class="sidebar-item">
+        <span class="sidebar-item-icon">📊</span>
+        <span>Reports</span>
+      </div>
+      <div class="sidebar-item">
+        <span class="sidebar-item-icon">🔗</span>
+        <span>Integrations</span>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main">
+      <!-- Header -->
+      <div class="header">
+        <h1>Full-Funnel Attribution Dashboard</h1>
+        <div class="header-controls">
+          <select>
+            <option>Last 30 days</option>
+            <option>Last 7 days</option>
+            <option>Last 60 days</option>
+          </select>
+          <button class="btn-secondary">📥 Export</button>
+          <button class="btn-primary">🔄 Refresh</button>
+        </div>
+      </div>
+
+      <!-- Content -->
+      <div class="content">
+        <!-- Highlight Metrics -->
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-label">Total Spend</div>
+            <div class="metric-value">$24,530</div>
+            <div class="metric-delta">↑ 12% vs last period</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Total Impressions</div>
+            <div class="metric-value">2.4M</div>
+            <div class="metric-delta">↑ 8% vs last period</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Conversions</div>
+            <div class="metric-value">1,247</div>
+            <div class="metric-delta">↑ 15% vs last period</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Avg CPA</div>
+            <div class="metric-value">$19.68</div>
+            <div class="metric-delta">↓ 3% vs last period</div>
+          </div>
+        </div>
+
+        <!-- Attribution Model Selector -->
+        <div class="card">
+          <div class="card-title">
+            <span>Attribution Model</span>
+            <div class="model-toggle">
+              <button class="model-btn active" onclick="changeModel(this, 'last-touch')">Last-Touch</button>
+              <button class="model-btn" onclick="changeModel(this, 'first-touch')">First-Touch</button>
+              <button class="model-btn" onclick="changeModel(this, 'linear')">Linear</button>
+              <button class="model-btn" onclick="changeModel(this, 'time-decay')">Time-Decay</button>
+            </div>
+          </div>
+          <div class="info-text">Showing Last-Touch attribution. Drag to compare models or toggle above.</div>
+        </div>
+
+        <!-- Funnel Overview -->
+        <div class="card">
+          <div class="card-title">Pipeline Overview</div>
+          
+          <div class="funnel-stage">
+            <div class="funnel-stage-label">TAM</div>
+            <div class="funnel-stage-bar">
+              <div class="funnel-stage-fill" style="width: 100%; background: linear-gradient(90deg, #a855f7, #7c3aed);">
+                <div class="funnel-stage-count">500K</div>
+              </div>
+            </div>
+            <div class="funnel-stage-info">
+              <div class="funnel-stage-info-count">500,000</div>
+              <div class="funnel-stage-info-rate">Total Addressable Market</div>
+            </div>
+          </div>
+
+          <div class="funnel-stage">
+            <div class="funnel-stage-label">Intent Core</div>
+            <div class="funnel-stage-bar">
+              <div class="funnel-stage-fill" style="width: 15%;">
+                <div class="funnel-stage-count">75K</div>
+              </div>
+            </div>
+            <div class="funnel-stage-info">
+              <div class="funnel-stage-info-count">75,000</div>
+              <div class="funnel-stage-info-rate">15% of TAM</div>
+            </div>
+          </div>
+
+          <div class="funnel-stage">
+            <div class="funnel-stage-label">Ad Audience</div>
+            <div class="funnel-stage-bar">
+              <div class="funnel-stage-fill" style="width: 12.5%;">
+                <div class="funnel-stage-count">62.5K</div>
+              </div>
+            </div>
+            <div class="funnel-stage-info">
+              <div class="funnel-stage-info-count">62,500</div>
+              <div class="funnel-stage-info-rate">83% matched</div>
+            </div>
+          </div>
+
+          <div class="funnel-stage">
+            <div class="funnel-stage-label">LP Visitors</div>
+            <div class="funnel-stage-bar">
+              <div class="funnel-stage-fill" style="width: 5.6%;">
+                <div class="funnel-stage-count">28K</div>
+              </div>
+            </div>
+            <div class="funnel-stage-info">
+              <div class="funnel-stage-info-count">28,000</div>
+              <div class="funnel-stage-info-rate">44.8% clicked</div>
+            </div>
+          </div>
+
+          <div class="funnel-stage">
+            <div class="funnel-stage-label">Retarget</div>
+            <div class="funnel-stage-bar">
+              <div class="funnel-stage-fill" style="width: 4%;">
+                <div class="funnel-stage-count">20K</div>
+              </div>
+            </div>
+            <div class="funnel-stage-info">
+              <div class="funnel-stage-info-count">20,000</div>
+              <div class="funnel-stage-info-rate">71% eligible</div>
+            </div>
+          </div>
+
+          <div class="funnel-stage">
+            <div class="funnel-stage-label">Converted</div>
+            <div class="funnel-stage-bar">
+              <div class="funnel-stage-fill" style="width: 2.5%;">
+                <div class="funnel-stage-count">12.5K</div>
+              </div>
+            </div>
+            <div class="funnel-stage-info">
+              <div class="funnel-stage-info-count">12,500</div>
+              <div class="funnel-stage-info-rate">2.5% conversion</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Platform Breakdown -->
+        <div class="card">
+          <div class="card-title">Platform Contribution (Ad Audience Stage)</div>
+          <div class="platform-grid">
+            <div class="platform-badge">
+              <div class="platform-badge-icon">f</div>
+              <div class="platform-badge-name">Meta</div>
+              <div class="platform-badge-count">42%</div>
+            </div>
+            <div class="platform-badge">
+              <div class="platform-badge-icon">G</div>
+              <div class="platform-badge-name">Google</div>
+              <div class="platform-badge-count">35%</div>
+            </div>
+            <div class="platform-badge">
+              <div class="platform-badge-icon">♪</div>
+              <div class="platform-badge-name">TikTok</div>
+              <div class="platform-badge-count">18%</div>
+            </div>
+            <div class="platform-badge">
+              <div class="platform-badge-icon">in</div>
+              <div class="platform-badge-name">LinkedIn</div>
+              <div class="platform-badge-count">5%</div>
+            </div>
+          </div>
+          <div class="info-text">Click any platform to drill into campaigns. Hover to see detailed metrics.</div>
+        </div>
+
+        <!-- Real-Time Metrics Feed -->
+        <div class="card">
+          <div class="card-title">
+            <span>Real-Time Activity</span>
+            <span style="font-size: 11px; color: #10b981;">● Live</span>
+          </div>
+          <div id="feed-container">
+            <div class="feed-item">
+              <span class="feed-item-text">Meta Campaign: Summer Promo</span>
+              <span class="feed-item-value">+450 impressions</span>
+            </div>
+            <div class="feed-item">
+              <span class="feed-item-text">Google Ads: Brand Search</span>
+              <span class="feed-item-value">+28 clicks</span>
+            </div>
+            <div class="feed-item">
+              <span class="feed-item-text">LP Visitor: Pixel fire captured</span>
+              <span class="feed-item-value">+12 users</span>
+            </div>
+            <div class="feed-item">
+              <span class="feed-item-text">Conversion matched: Product Page</span>
+              <span class="feed-item-value">+3 conversions</span>
+            </div>
+          </div>
+          <div class="info-text">Updates every 5 minutes. Live conversion data includes 24-hour platform delay.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function changeModel(btn, model) {
+      document.querySelectorAll('.model-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      console.log('Changed to:', model);
+    }
+
+    // Simulate real-time updates
+    setInterval(() => {
+      const container = document.getElementById('feed-container');
+      const events = [
+        { campaign: 'Meta Campaign: Summer Promo', value: '+' + Math.floor(Math.random() * 1000) + ' impressions' },
+        { campaign: 'Google Ads: Brand Search', value: '+' + Math.floor(Math.random() * 100) + ' clicks' },
+        { campaign: 'TikTok Ads: Viral Series', value: '+' + Math.floor(Math.random() * 500) + ' views' },
+        { campaign: 'LP Visitor: Pixel fire', value: '+' + Math.floor(Math.random() * 50) + ' users' },
+        { campaign: 'Conversion matched', value: '+' + Math.floor(Math.random() * 10) + ' conversions' }
+      ];
+
+      const event = events[Math.floor(Math.random() * events.length)];
+      const item = document.createElement('div');
+      item.className = 'feed-item pulse';
+      item.innerHTML = `
+        <span class="feed-item-text">${event.campaign}</span>
+        <span class="feed-item-value">${event.value}</span>
+      `;
+      container.insertBefore(item, container.firstChild);
+
+      if (container.children.length > 8) {
+        container.removeChild(container.lastChild);
+      }
+    }, 3000);
+  </script>
+</body>
+</html>
