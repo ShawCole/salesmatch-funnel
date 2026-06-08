@@ -2,12 +2,30 @@ import bcrypt from 'bcryptjs';
 import { pool } from './pool.ts';
 
 async function seed() {
-  // Never seed known-weak demo accounts into a production database.
-  if ((process.env.NODE_ENV ?? 'development') === 'production' && !process.env.SEED_FORCE) {
-    console.error('Refusing to run dev seed in production. Set SEED_FORCE=1 to override.');
+  // Demo accounts may only be seeded into an explicit local-dev environment.
+  // Any other environment (staging/preview/production/unset) requires an explicit
+  // override AND a strong, caller-supplied password — never a known literal.
+  const env = process.env.NODE_ENV ?? 'development';
+  const isLocalEnv = env === 'development' || env === 'test';
+  let seedPassword: string;
+  if (isLocalEnv) {
+    seedPassword = process.env.SEED_PASSWORD ?? 'dev123';
+  } else if (process.env.SEED_FORCE) {
+    if (!process.env.SEED_PASSWORD || process.env.SEED_PASSWORD.length < 12) {
+      console.error(
+        `SEED_FORCE is set but SEED_PASSWORD is missing or too short ` +
+        `(>= 12 chars required) for non-local seeding (NODE_ENV="${env}").`,
+      );
+      process.exit(1);
+    }
+    seedPassword = process.env.SEED_PASSWORD;
+  } else {
+    console.error(
+      `Refusing to run dev seed with NODE_ENV="${env}". Seeding is allowed only in ` +
+      `development/test, or with SEED_FORCE=1 plus a strong SEED_PASSWORD.`,
+    );
     process.exit(1);
   }
-  const seedPassword = process.env.SEED_PASSWORD ?? 'dev123';
   const hash = await bcrypt.hash(seedPassword, 12);
 
   // ArkData admin tenant
