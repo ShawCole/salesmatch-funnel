@@ -1,8 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { LoginPage } from './views/LoginPage';
-import { FilterProvider } from './contexts/FilterContext';
+import { AuthProvider } from './contexts/AuthContext';
+import { FullFunnelView } from './views/FullFunnelView';
 import { PipelineDashboard } from './components/funnel/PipelineDashboard';
+import { FilterProvider } from './contexts/FilterContext';
 import { MapView } from './components/MapView';
 import { FilterBar } from './components/FilterBar';
 import { StatsBar } from './components/StatsBar';
@@ -52,7 +52,6 @@ const GRID_ORDER = [
 ];
 
 function AuthenticatedApp() {
-  const { user, logout } = useAuth();
   const [view, setView] = useState<'funnel' | 'map'>(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get('view') === 'map' ? 'map' : 'funnel';
@@ -106,14 +105,6 @@ function AuthenticatedApp() {
 
   const ViewToggle = () => (
     <div className="fixed top-4 right-4 z-[300] flex gap-1 glass rounded-lg p-1">
-      {user && (
-        <button
-          onClick={logout}
-          className="px-3 py-1.5 rounded-md text-xs font-medium text-gray-400 hover:text-white transition-all"
-        >
-          Sign Out
-        </button>
-      )}
       <button
         onClick={() => setView('funnel')}
         className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${view === 'funnel' ? 'bg-purple-600/40 text-purple-200' : 'text-gray-400 hover:text-white'}`}
@@ -130,12 +121,17 @@ function AuthenticatedApp() {
   );
 
   if (view === 'funnel') {
-    return (
-      <>
-        <ViewToggle />
-        <PipelineDashboard />
-      </>
-    );
+    // ?classic=true preserves the original prototype pipeline dashboard.
+    const isClassic = new URLSearchParams(window.location.search).get('classic') === 'true';
+    if (isClassic) {
+      return (
+        <>
+          <ViewToggle />
+          <PipelineDashboard />
+        </>
+      );
+    }
+    return <FullFunnelView onDrillToMap={() => setView('map')} />;
   }
 
   if (isMobile) {
@@ -225,23 +221,10 @@ function AuthenticatedApp() {
   );
 }
 
-function App() {
-  const { user } = useAuth();
-
-  // Allow unauthenticated access if ?demo=true (preserves current prototype behavior)
-  const isDemo = new URLSearchParams(window.location.search).get('demo') === 'true';
-
-  if (!user && !isDemo) {
-    return <LoginPage />;
-  }
-
-  return <AuthenticatedApp />;
-}
-
 export default function AppWrapper() {
   return (
     <AuthProvider>
-      <App />
+      <AuthenticatedApp />
     </AuthProvider>
   );
 }
