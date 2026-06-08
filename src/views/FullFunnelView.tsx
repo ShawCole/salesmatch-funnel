@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   PLATFORMS, PLATFORM_ORDER, ATTRIBUTION_MODELS, ATTRIBUTION_PRESETS,
-  PIPELINES, DATE_RANGES, TAM,
+  PIPELINES, DATE_RANGES, WHO_GROUPS,
   fmt, fmtMoney, splitAbs, scaledStages,
   FEED_NAMES, FEED_ROLES, FEED_COMPANIES, FEED_CITIES, pickFeedPlatform, rand,
-  type Stage, type StageKey, type PlatformKey,
+  type Stage, type PlatformKey, type FunnelMode,
 } from '../data/funnelMock';
 
 interface FeedEvent {
@@ -18,34 +18,38 @@ interface FeedEvent {
 
 interface FullFunnelViewProps {
   /** Called when the user drills a pixel-owned stage into the geographic explorer. */
-  onDrillToMap?: (stage: StageKey) => void;
+  onDrillToMap?: (stageKey: string) => void;
 }
+
+const DEFAULT_SELECTED: Record<FunnelMode, string> = { people: 'onlp', marketing: 'visit' };
+const CONV_STAGE: Record<FunnelMode, string> = { people: 'converted', marketing: 'form' };
 
 let feedSeq = 0;
 
 export function FullFunnelView({ onDrillToMap }: FullFunnelViewProps) {
+  const [mode, setMode] = useState<FunnelMode>('people');
   const [pipeline, setPipeline] = useState<string>('all');
   const [model, setModel] = useState<string>('last');
   const [rangeIdx, setRangeIdx] = useState(2); // Last 30 days
-  const [selected, setSelected] = useState<StageKey>('visit');
-  const [stages, setStages] = useState<Stage[]>(() => scaledStages(1, ATTRIBUTION_PRESETS.last));
+  const [selected, setSelected] = useState<string>(DEFAULT_SELECTED.people);
+  const [peopleDrill, setPeopleDrill] = useState<'who' | 'source'>('who');
+  const [stages, setStages] = useState<Stage[]>(() => scaledStages('people', 1, ATTRIBUTION_PRESETS.last));
   const [feed, setFeed] = useState<FeedEvent[]>([]);
 
-  // Reset funnel when the pipeline or attribution model changes.
+  // Reset the funnel when mode / pipeline / attribution model changes.
   useEffect(() => {
     const scale = PIPELINES.find((p) => p.key === pipeline)?.scale ?? 1;
-    setStages(scaledStages(scale, ATTRIBUTION_PRESETS[model]));
-  }, [pipeline, model]);
+    setStages(scaledStages(mode, scale, ATTRIBUTION_PRESETS[model]));
+    setSelected(DEFAULT_SELECTED[mode]);
+  }, [mode, pipeline, model]);
 
-  // Live ticking — gentle jitter on delivery stages so the board feels alive.
+  // Live ticking — bump the top-of-funnel stages so the board feels alive.
   useEffect(() => {
     const jitter = setInterval(() => {
       setStages((prev) =>
-        prev.map((s) => {
-          if (s.key === 'impr') return { ...s, count: s.count + Math.floor(Math.random() * 180) };
-          if (s.key === 'click' && Math.random() < 0.6) return { ...s, count: s.count + Math.floor(Math.random() * 4) };
-          if (s.key === 'visit' && Math.random() < 0.4) return { ...s, count: s.count + 1 };
-          if (s.key === 'retarget' && Math.random() < 0.1) return { ...s, count: s.count + 1 };
+        prev.map((s, i) => {
+          if (i === 1) return { ...s, count: s.count + Math.floor(Math.random() * (s.count > 5000 ? 160 : 6)) };
+          if (i === 2 && Math.random() < 0.5) return { ...s, count: s.count + 1 };
           return s;
         }),
       );
@@ -53,47 +57,53 @@ export function FullFunnelView({ onDrillToMap }: FullFunnelViewProps) {
     return () => clearInterval(jitter);
   }, []);
 
-  // Live pixel feed — new person-level events stream in; some convert.
+  // Live feed — person-level events stream in; some convert and tick the funnel.
   useEffect(() => {
-    const seedN = 5;
-    const seedEvents: FeedEvent[] = Array.from({ length: seedN }, (_, i) => makeEvent(i * 8));
-    setFeed(seedEvents);
-
+    setFeed(Array.from({ length: 5 }, (_, i) => makeEvent(i * 8)));
     const emit = setInterval(() => {
       const ev = makeEvent(0);
-      setFeed((prev) => {
-        const aged = prev.map((e) => ({ ...e, ageSec: e.ageSec + 7 + Math.floor(Math.random() * 5) }));
-        return [ev, ...aged].slice(0, 6);
-      });
+      setFeed((prev) => [ev, ...prev.map((e) => ({ ...e, ageSec: e.ageSec + 7 + Math.floor(Math.random() * 5) }))].slice(0, 6));
       if (ev.isConv) {
-        setStages((prev) => prev.map((s) => (s.key === 'conv' ? { ...s, count: s.count + 1 } : s)));
+        setStages((prev) => prev.map((s) => (s.key === CONV_STAGE[modeRef.current] ? { ...s, count: s.count + 1 } : s)));
       }
     }, 2400);
     return () => clearInterval(emit);
   }, []);
 
-  const stageByKey = useMemo(() => Object.fromEntries(stages.map((s) => [s.key, s])) as Record<StageKey, Stage>, [stages]);
-  const selectedStage = stageByKey[selected] ?? stages[3];
+  // keep a ref so the feed interval always increments the current mode's conv stage
+  const modeRef = useRef(mode);
+  modeRef.current = mode;
 
-  const impr = stageByKey.impr?.count ?? 0;
-  const clicks = stageByKey.click?.count ?? 0;
-  const visit = stageByKey.visit?.count ?? 0;
-  const conv = stageByKey.conv?.count ?? 0;
+  const stageByKey = useMemo(() => Object.fromEntries(stages.map((s) => [s.key, s])) as Record<string, Stage>, [stages]);
+  const selectedStage = stageByKey[selected] ?? stages[2];
 
-  const cpcCents = 85;
-  const kpis = [
-    { label: 'Total Spend',     value: fmtMoney(clicks * cpcCents), trend: '+8.2%',  up: true },
-    { label: 'Impressions',     value: fmt(impr),                   trend: '-2.1%',  up: false },
-    { label: 'Clicks',          value: fmt(clicks),                 trend: '+12.3%', up: true },
-    { label: 'Avg CTR',         value: impr ? (clicks / impr * 100).toFixed(2) + '%' : '—', trend: '+14.7%', up: true },
-    { label: 'Avg CPC',         value: '$0.85',                     trend: '+5.3%',  up: true },
-    { label: 'Influenced Acct', value: fmt(Math.round(visit * 1.36)), trend: '+8.2%', up: true },
-    { label: '◆ Verified Conv', value: fmt(conv),                   trend: '+22.0%', up: true, hero: true },
-  ];
+  const get = (k: string) => stageByKey[k]?.count ?? 0;
 
-  const metaClaims = Math.max(conv, Math.round(conv * 1.605));
-  const gap = metaClaims - conv;
+  const kpis = mode === 'people'
+    ? [
+        { label: 'People Uploaded', value: fmt(get('uploaded')), trend: '+6.1%', up: true },
+        { label: 'In Audience',     value: fmt(get('audience')), trend: '+4.8%', up: true },
+        { label: 'Match Rate',      value: get('uploaded') ? Math.round(get('audience') / get('uploaded') * 100) + '%' : '—', trend: '+2.0%', up: true },
+        { label: 'On Landing Page', value: fmt(get('onlp')),     trend: '+9.4%', up: true },
+        { label: 'Converted',       value: fmt(get('converted')), trend: '+12.0%', up: true },
+        { label: 'Booked',          value: fmt(get('booked')),   trend: '+7.5%', up: true },
+        { label: '🏆 Closed',        value: fmt(get('closed')),   trend: '+22.0%', up: true, hero: true },
+      ]
+    : [
+        { label: 'Total Spend',     value: fmtMoney(get('click') * 85), trend: '+8.2%', up: true },
+        { label: 'Impressions',     value: fmt(get('impr')),   trend: '-2.1%', up: false },
+        { label: 'Clicks',          value: fmt(get('click')),  trend: '+12.3%', up: true },
+        { label: 'Avg CTR',         value: get('impr') ? (get('click') / get('impr') * 100).toFixed(2) + '%' : '—', trend: '+14.7%', up: true },
+        { label: 'Visitors',        value: fmt(get('visit')),  trend: '+8.6%', up: true },
+        { label: 'Form Completes',  value: fmt(get('form')),   trend: '+10.1%', up: true },
+        { label: '🏆 Closed',        value: fmt(get('closed')), trend: '+22.0%', up: true, hero: true },
+      ];
+
+  const closed = get('closed');
+  const metaClaims = Math.max(closed, Math.round(closed * 1.605));
+  const gap = metaClaims - closed;
   const gapPct = metaClaims ? Math.round(gap / metaClaims * 100) : 0;
+  const matchRate = get('uploaded') ? Math.round(get('audience') / get('uploaded') * 100) : 0;
 
   return (
     <div className="fixed inset-0 overflow-y-auto bg-[#030712] text-[#e8e8ec]"
@@ -101,13 +111,15 @@ export function FullFunnelView({ onDrillToMap }: FullFunnelViewProps) {
       <div className="mx-auto max-w-[1340px] px-5 pt-5 pb-20">
 
         {/* HEADER */}
-        <header className="mb-[18px] flex flex-wrap items-center justify-between gap-4">
+        <header className="mb-4 flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-xl font-extrabold tracking-tight">
               <span className="text-[#a855f7]">Sales Match</span> — Full-Funnel Attribution
             </h1>
             <p className="mt-0.5 text-[11px] text-[#9aa0ad]">
-              Intent → Ad Audience → Impressions → Clicks → LP Visit (pixel) → Retarget → Convert · multi-platform, multi-touch
+              {mode === 'people'
+                ? 'People funnel · first-party, person-level, pixel-verified — uploaded → audience → landing page → converted → booked → closed'
+                : 'Marketing funnel · platform-reported aggregate — impressions → clicks → visitors → form completes → booked → closed'}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -118,25 +130,52 @@ export function FullFunnelView({ onDrillToMap }: FullFunnelViewProps) {
               </span>
               LIVE
             </span>
-            <div className="inline-flex gap-0.5 rounded-lg border border-white/[0.08] bg-white/[0.03] p-[3px]">
-              {ATTRIBUTION_MODELS.map((m) => (
-                <button key={m.key} onClick={() => setModel(m.key)}
-                  className={`rounded-md px-2.5 py-1.5 text-[11px] font-semibold transition ${model === m.key ? 'bg-purple-500/25 text-white' : 'text-[#9aa0ad] hover:text-white'}`}>
-                  {m.label}
-                </button>
-              ))}
-            </div>
             <select value={rangeIdx} onChange={(e) => setRangeIdx(Number(e.target.value))}
               className="cursor-pointer rounded-lg border border-white/[0.08] bg-white/[0.03] px-2.5 py-2 text-[12px] font-medium text-[#9aa0ad] outline-none hover:border-white/20">
               {DATE_RANGES.map((r, i) => <option key={r} value={i} className="bg-gray-900">📅 {r}</option>)}
             </select>
             <span className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] px-2.5 py-2 text-[12px] font-medium text-[#9aa0ad]">🏢 All tenants ▾</span>
-            <button onClick={() => onDrillToMap?.('visit')}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] px-2.5 py-2 text-[12px] font-medium text-[#9aa0ad] transition hover:border-white/20 hover:text-white">
+          </div>
+        </header>
+
+        {/* MODE TOGGLE — the primary split */}
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <div className="inline-flex gap-1 rounded-xl border border-white/[0.08] bg-white/[0.03] p-1">
+            {([
+              { key: 'people', label: '👥 People Funnel', sub: 'person-level' },
+              { key: 'marketing', label: '📊 Marketing', sub: 'aggregate' },
+            ] as const).map((m) => (
+              <button key={m.key} onClick={() => setMode(m.key)}
+                className={`rounded-lg px-3.5 py-2 text-[12.5px] font-bold transition ${mode === m.key ? 'bg-purple-500/25 text-white shadow-[inset_0_0_0_1px_rgba(168,85,247,.4)]' : 'text-[#9aa0ad] hover:text-white'}`}>
+                {m.label} <span className="ml-1 text-[10px] font-medium opacity-60">{m.sub}</span>
+              </button>
+            ))}
+            <button onClick={() => onDrillToMap?.('map')}
+              className="rounded-lg px-3.5 py-2 text-[12.5px] font-bold text-[#9aa0ad] transition hover:text-white">
               🗺 Map
             </button>
           </div>
-        </header>
+
+          {/* attribution model — Marketing only (People is deterministic) */}
+          {mode === 'marketing' && (
+            <div className="inline-flex items-center gap-2">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-[#5b626f]">Attribution</span>
+              <div className="inline-flex gap-0.5 rounded-lg border border-white/[0.08] bg-white/[0.03] p-[3px]">
+                {ATTRIBUTION_MODELS.map((m) => (
+                  <button key={m.key} onClick={() => setModel(m.key)}
+                    className={`rounded-md px-2.5 py-1.5 text-[11px] font-semibold transition ${model === m.key ? 'bg-purple-500/25 text-white' : 'text-[#9aa0ad] hover:text-white'}`}>
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {mode === 'people' && (
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-purple-500/25 bg-purple-500/[0.08] px-2.5 py-1.5 text-[11px] font-semibold text-purple-200">
+              ◆ Deterministic · pixel-verified
+            </span>
+          )}
+        </div>
 
         {/* PIPELINE TABS */}
         <div className="mb-4 flex flex-wrap gap-1.5">
@@ -170,9 +209,10 @@ export function FullFunnelView({ onDrillToMap }: FullFunnelViewProps) {
           {/* FUNNEL */}
           <section className="glass rounded-2xl px-5 py-[18px]">
             <div className="mb-1 flex items-center justify-between">
-              <h3 className="text-[13px] font-bold">Pipeline Overview</h3>
+              <h3 className="text-[13px] font-bold">{mode === 'people' ? 'People Funnel' : 'Marketing Funnel'}</h3>
               <div className="text-[10.5px] text-[#5b626f]">
-                TAM {TAM.toLocaleString()} · ~3% in-market · <span className="text-[#9aa0ad]">spend live · pixel live</span>
+                {mode === 'people' ? 'Each stage is real, resolved people · ' : 'Platform-reported delivery · '}
+                <span className="text-[#9aa0ad]">live · pixel-tracked</span>
               </div>
             </div>
 
@@ -185,7 +225,7 @@ export function FullFunnelView({ onDrillToMap }: FullFunnelViewProps) {
                 </span>
               ))}
               <span className="inline-flex items-center gap-1.5 text-[10.5px] font-medium text-[#9aa0ad]">
-                <i className="inline-block h-[9px] w-[9px] rounded-[2px] bg-[#a855f7]" />◆ Pixel-owned stage
+                <i className="inline-block h-[9px] w-[9px] rounded-[2px] bg-[#a855f7]" />◆ Pixel / first-party
               </span>
             </div>
 
@@ -195,44 +235,40 @@ export function FullFunnelView({ onDrillToMap }: FullFunnelViewProps) {
                 const prev = i > 0 ? stages[i - 1].count : null;
                 const rate = prev ? (st.count / prev * 100) : null;
                 const abs = splitAbs(st);
-                const goodRate = rate != null && rate >= 80;
+                const goodRate = rate != null && rate >= 60;
                 const isSel = st.key === selected;
                 return (
                   <div key={st.key} onClick={() => setSelected(st.key)}
                     className={`mb-[7px] flex cursor-pointer items-center gap-3.5 rounded-xl p-2 transition ${isSel ? 'bg-purple-500/[0.08] shadow-[inset_0_0_0_1px_rgba(168,85,247,.25)]' : 'hover:bg-white/[0.025]'}`}>
-                    {/* meta */}
-                    <div className="w-[140px] flex-shrink-0">
+                    <div className="w-[150px] flex-shrink-0">
                       <div className="flex items-center gap-1.5 text-[12px] font-semibold">
                         <span className="text-[13px]">{st.icon}</span>{st.name}
                         {st.pixel && <span className="text-[10px] text-[#a855f7]">◆</span>}
                       </div>
                       <div className="mt-px text-[9px] text-[#5b626f]">{st.desc}</div>
                     </div>
-                    {/* bar */}
                     <div className="flex flex-1 justify-center">
                       <div className="flex h-[38px] overflow-hidden rounded-[7px] shadow-[inset_0_1px_0_rgba(255,255,255,.06)] transition-[width] duration-700"
                         style={{ width: `${st.barWidth}%` }}>
-                        {st.seed ? (
+                        {st.firstParty ? (
                           <div className="h-full w-full" style={{ background: 'linear-gradient(135deg,#a855f7,#7c3aed)' }} />
                         ) : (
                           PLATFORM_ORDER.map((p) => {
                             const v = abs[p];
                             if (!v) return null;
                             const pc = st.count ? (v / st.count * 100) : 0;
-                            return <div key={p} className="relative h-full" style={{ flexBasis: `${pc}%`, background: PLATFORMS[p].color }} />;
+                            return <div key={p} className="h-full" style={{ flexBasis: `${pc}%`, background: PLATFORMS[p].color }} />;
                           })
                         )}
                       </div>
                     </div>
-                    {/* nums */}
-                    <div className="w-[118px] flex-shrink-0 text-right">
+                    <div className="w-[120px] flex-shrink-0 text-right">
                       <div className="text-[15px] font-extrabold tabular-nums">{fmt(st.count)}</div>
                       {rate != null ? (
                         <div className={`text-[9.5px] tabular-nums ${goodRate ? 'text-[#14b8a6]' : 'text-[#5b626f]'}`}>{rate.toFixed(1)}% from above</div>
                       ) : (
-                        <div className="text-[9.5px] tabular-nums text-[#a855f7]">seed audience</div>
+                        <div className="text-[9.5px] tabular-nums text-[#a855f7]">{st.firstParty ? 'first-party list' : 'top of funnel'}</div>
                       )}
-                      {i === 0 && <div className="text-[9px] font-semibold text-[#fbbf24]">{(st.count / TAM * 100).toFixed(1)}% of TAM in-market</div>}
                     </div>
                   </div>
                 );
@@ -249,13 +285,31 @@ export function FullFunnelView({ onDrillToMap }: FullFunnelViewProps) {
                 <span className="text-[14px]">{selectedStage.icon}</span>{selectedStage.name}
               </div>
               <div className="mb-3.5 text-[10px] text-[#5b626f]">
-                {selectedStage.pixel ? 'ArkData pixel · person-level · drill into the map explorer'
-                  : selectedStage.seed ? 'Intent-vendor seed audience · the in-market core'
-                  : selectedStage.key === 'conv' ? 'Deterministic, pixel-verified conversions, attributed by the current model'
-                  : 'Platform-reported delivery · attributed by current model'}
+                {selectedStage.firstParty ? 'First-party uploaded list · the in-market core'
+                  : selectedStage.pixel ? 'ArkData pixel · person-level · drill into the explorer'
+                  : mode === 'people' ? 'Resolved people · deterministic'
+                  : 'Platform-reported · attributed by current model'}
               </div>
-              <StageBreakdown stage={selectedStage} />
-              {selectedStage.pixel && (
+
+              {/* People stages get a Who / Source toggle */}
+              {mode === 'people' && (
+                <div className="mb-3 inline-flex gap-0.5 rounded-lg border border-white/[0.08] bg-white/[0.03] p-[3px]">
+                  {(['who', 'source'] as const).map((t) => (
+                    <button key={t} onClick={() => setPeopleDrill(t)}
+                      className={`rounded-md px-3 py-1 text-[10.5px] font-semibold capitalize transition ${peopleDrill === t ? 'bg-purple-500/25 text-white' : 'text-[#9aa0ad] hover:text-white'}`}>
+                      {t === 'who' ? 'Who' : 'Source'}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {mode === 'people' && peopleDrill === 'who'
+                ? <WhoPanel />
+                : selectedStage.firstParty
+                  ? <div className="text-[11px] leading-relaxed text-[#5b626f]">First-party list — no ad-platform source. {fmt(selectedStage.count)} accounts seeded into platform Custom Audiences downstream.</div>
+                  : <StageBreakdown stage={selectedStage} />}
+
+              {(selectedStage.pixel || (mode === 'people' && peopleDrill === 'who')) && (
                 <button onClick={() => onDrillToMap?.(selectedStage.key)}
                   className="mt-3 w-full rounded-lg border border-purple-500/30 bg-purple-500/10 py-2 text-[11px] font-semibold text-purple-200 transition hover:bg-purple-500/20">
                   ◆ Drill into geographic explorer →
@@ -263,21 +317,39 @@ export function FullFunnelView({ onDrillToMap }: FullFunnelViewProps) {
               )}
             </div>
 
-            {/* PIXEL-VERIFIED VS CLAIMED */}
-            <div className="glass rounded-2xl px-[17px] py-[15px]">
-              <div className="mb-[3px] text-[12px] font-bold">◆ Pixel-verified vs platform-claimed</div>
-              <p className="mb-3 text-[10px] leading-snug text-[#5b626f]">First-party truth. The gap is over-attribution the ad platforms can't see past.</p>
-              <div className="flex flex-col gap-[9px]">
-                <VerifyRow label="Meta claims" value={metaClaims} width={100} color={PLATFORMS.meta.color} />
-                <VerifyRow label="◆ Pixel verified" value={conv} width={metaClaims ? conv / metaClaims * 100 : 0} color="#a855f7" />
+            {/* CONTEXT PANEL — differs by mode */}
+            {mode === 'marketing' ? (
+              <div className="glass rounded-2xl px-[17px] py-[15px]">
+                <div className="mb-[3px] text-[12px] font-bold">◆ Pixel-verified vs platform-claimed</div>
+                <p className="mb-3 text-[10px] leading-snug text-[#5b626f]">First-party truth. The gap is over-attribution the ad platforms can't see past.</p>
+                <div className="flex flex-col gap-[9px]">
+                  <MeterRow label="Meta claims" value={metaClaims} width={100} color={PLATFORMS.meta.color} />
+                  <MeterRow label="◆ Pixel verified" value={closed} width={metaClaims ? closed / metaClaims * 100 : 0} color="#a855f7" />
+                </div>
+                <div className="mt-[11px] rounded-lg border border-amber-400/20 bg-amber-400/[0.08] px-2.5 py-2 text-[10px] leading-snug text-[#fbbf24]">
+                  ⚠ {gap} conversions ({gapPct}%) claimed by Meta were never seen by the pixel — likely view-through or modeled.
+                </div>
               </div>
-              <div className="mt-[11px] rounded-lg border border-amber-400/20 bg-amber-400/[0.08] px-2.5 py-2 text-[10px] leading-snug text-[#fbbf24]">
-                ⚠ {gap} conversions ({gapPct}%) claimed by Meta were never seen by the pixel — likely view-through or modeled.
+            ) : (
+              <div className="glass rounded-2xl px-[17px] py-[15px]">
+                <div className="mb-[3px] text-[12px] font-bold">◆ Audience match quality</div>
+                <p className="mb-3 text-[10px] leading-snug text-[#5b626f]">How much of your uploaded list resolved to real, reachable people.</p>
+                <div className="flex flex-col gap-[9px]">
+                  <MeterRow label="Match rate" value={`${matchRate}%`} width={matchRate} color="#a855f7" />
+                  <MeterRow label="Quality score" value="8.6" width={86} color="#14b8a6" />
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2 text-[10px]">
+                  <div className="rounded-lg bg-white/[0.04] px-2.5 py-2"><div className="font-extrabold tabular-nums text-[#e8e8ec]">{fmt(get('audience'))}</div><div className="text-[#5b626f]">synced</div></div>
+                  <div className="rounded-lg bg-white/[0.04] px-2.5 py-2"><div className="font-extrabold tabular-nums text-[#e8e8ec]">{fmt(get('uploaded') - get('audience'))}</div><div className="text-[#5b626f]">unmatched</div></div>
+                </div>
+                <div className="mt-[11px] rounded-lg border border-amber-400/20 bg-amber-400/[0.08] px-2.5 py-2 text-[10px] leading-snug text-[#fbbf24]">
+                  ⚠ {fmt(get('uploaded') - get('audience'))} unmatched — no PII match, suppressed, or opted out.
+                </div>
               </div>
-            </div>
+            )}
 
             {/* LIVE FEED */}
-            <div className="glass flex min-h-[280px] flex-col rounded-2xl px-[17px] py-4">
+            <div className="glass flex min-h-[260px] flex-col rounded-2xl px-[17px] py-4">
               <div className="mb-3 flex items-center justify-between text-[12px] font-bold">
                 <span>◉ Live pixel feed</span>
                 <span className="font-mono text-[9px] text-[#5b626f]">~2.5/min</span>
@@ -301,8 +373,8 @@ export function FullFunnelView({ onDrillToMap }: FullFunnelViewProps) {
         </div>
 
         <footer className="mt-[22px] text-center text-[10px] leading-relaxed text-[#5b626f]">
-          Live demo — numbers are simulated and tick to illustrate the product. Stage breakdowns, attribution-model selector,
-          freshness, the live pixel feed, and pixel-verified-vs-claimed are the new surfaces over the existing prototype.
+          Live demo — numbers are simulated and tick to illustrate the product. Two funnels: a person-level People funnel
+          (deterministic, pixel-verified) and an aggregate Marketing funnel (platform-reported), bridged at Visitors ↔ On Landing Page and Booked → Closed.
         </footer>
       </div>
     </div>
@@ -310,14 +382,6 @@ export function FullFunnelView({ onDrillToMap }: FullFunnelViewProps) {
 }
 
 function StageBreakdown({ stage }: { stage: Stage }) {
-  if (stage.seed) {
-    return (
-      <div className="text-[11px] leading-relaxed text-[#5b626f]">
-        No platform split — this is the upstream intent audience before any ad delivery.{' '}
-        {fmt(stage.count)} in-market accounts seeded into platform Custom Audiences downstream.
-      </div>
-    );
-  }
   const abs = splitAbs(stage);
   const max = Math.max(...PLATFORM_ORDER.map((p) => abs[p]), 1);
   const rows = PLATFORM_ORDER.filter((p) => abs[p] > 0);
@@ -341,12 +405,35 @@ function StageBreakdown({ stage }: { stage: Stage }) {
   );
 }
 
-function VerifyRow({ label, value, width, color }: { label: string; value: number; width: number; color: string }) {
+function WhoPanel() {
+  return (
+    <div className="flex flex-col gap-3">
+      {WHO_GROUPS.map((g) => (
+        <div key={g.title}>
+          <div className="mb-1.5 text-[9.5px] font-semibold uppercase tracking-wider text-[#5b626f]">{g.title}</div>
+          <div className="flex flex-col gap-1.5">
+            {g.items.map((it) => (
+              <div key={it.label} className="flex items-center gap-2">
+                <span className="w-16 flex-shrink-0 text-[10.5px] text-[#9aa0ad]">{it.label}</span>
+                <span className="h-1.5 flex-1 overflow-hidden rounded-[3px] bg-white/[0.06]">
+                  <span className="block h-full rounded-[3px] bg-purple-500/70" style={{ width: `${it.pct}%` }} />
+                </span>
+                <span className="w-9 text-right text-[10px] font-bold tabular-nums text-[#e8e8ec]">{it.pct}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MeterRow({ label, value, width, color }: { label: string; value: string | number; width: number; color: string }) {
   return (
     <div className="flex items-center gap-[9px]">
       <span className="w-24 text-[10.5px] text-[#9aa0ad]">{label}</span>
       <span className="h-[9px] flex-1 overflow-hidden rounded-[5px] bg-white/[0.06]">
-        <span className="block h-full rounded-[5px] transition-[width] duration-500" style={{ width: `${width}%`, background: color }} />
+        <span className="block h-full rounded-[5px] transition-[width] duration-500" style={{ width: `${Math.min(width, 100)}%`, background: color }} />
       </span>
       <span className="w-[46px] text-right text-[11px] font-extrabold tabular-nums">{value}</span>
     </div>

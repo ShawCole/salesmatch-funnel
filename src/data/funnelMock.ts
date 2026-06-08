@@ -1,5 +1,7 @@
 // Mock data model for the Full-Funnel Attribution dashboard.
-// Numbers are simulated and tick live in the UI to illustrate the product.
+// Two funnels: a person-level "People" funnel (deterministic, pixel-resolved) and
+// an aggregate "Marketing" funnel (platform-reported). Numbers are simulated and
+// tick live in the UI to illustrate the product.
 
 export type PlatformKey = 'meta' | 'google' | 'linkedin' | 'tiktok' | 'dsp' | 'email';
 
@@ -20,39 +22,50 @@ export const PLATFORMS: Record<PlatformKey, Platform> = {
 
 export const PLATFORM_ORDER: PlatformKey[] = ['meta', 'google', 'linkedin', 'tiktok', 'dsp', 'email'];
 
-export type StageKey = 'intent' | 'impr' | 'click' | 'visit' | 'retarget' | 'conv';
+export type FunnelMode = 'people' | 'marketing';
 
 export interface Stage {
-  key: StageKey;
+  key: string;
   icon: string;
   name: string;
   desc: string;
   count: number;
   /** relative per-platform weights; absolute = count * weight / sum(weights) */
   split: Record<PlatformKey, number>;
-  seed?: boolean;   // upstream intent audience, no platform split
-  pixel?: boolean;  // ArkData pixel-owned stage
-  /** visual bar width as % of the widest stage (impressions = 100) */
+  firstParty?: boolean; // uploaded list — no ad-platform source
+  pixel?: boolean;      // ArkData pixel-owned stage
+  /** visual bar width as % of the widest stage */
   barWidth: number;
-  /** accent tint for the stage row */
   tint: string;
 }
 
 const z: Record<PlatformKey, number> = { meta: 0, google: 0, linkedin: 0, tiktok: 0, dsp: 0, email: 0 };
 
-// Base funnel for "All Pipelines" over the default 30d window.
-export const BASE_STAGES: Stage[] = [
-  { key: 'intent',   icon: '🔍', name: 'Intent Audience', desc: 'Intent vendor',     count: 965,    split: { ...z },                                              seed: true,  barWidth: 60,  tint: '#a855f7' },
-  { key: 'impr',     icon: '📡', name: 'Impressions',     desc: 'Ad delivery',       count: 892000, split: { ...z, meta: 48, google: 31, linkedin: 14, tiktok: 3, dsp: 4 },              barWidth: 100, tint: '#6366f1' },
-  { key: 'click',    icon: '👆', name: 'Clicks',          desc: 'Ad clicks',         count: 12400,  split: { ...z, meta: 46, google: 30, linkedin: 17, tiktok: 2, dsp: 5 },              barWidth: 42,  tint: '#818cf8' },
-  { key: 'visit',    icon: '👁', name: 'LP Visitors',     desc: 'ArkData pixel',     count: 3180,   split: { ...z, meta: 44, google: 29, linkedin: 19, tiktok: 2, dsp: 4, email: 2 },     pixel: true, barWidth: 28,  tint: '#3b82f6' },
-  { key: 'retarget', icon: '🎯', name: 'Retarget Aud.',   desc: 'Pixel → sync',      count: 2910,   split: { ...z, meta: 52, google: 24, linkedin: 20, dsp: 2, email: 2 },               barWidth: 25,  tint: '#14b8a6' },
-  { key: 'conv',     icon: '✓',  name: 'Converted',       desc: 'Pixel-verified',    count: 38,     split: { ...z, meta: 41, google: 26, linkedin: 28, dsp: 1, email: 4 },               barWidth: 9,   tint: '#10b981' },
+// ---- PEOPLE funnel (person-level, deterministic) ----
+// uploaded → in audience → on landing page → converted → booked → closed
+export const PEOPLE_BASE: Stage[] = [
+  { key: 'uploaded',  icon: '👥', name: 'People Uploaded', desc: 'Customer + intent list', count: 12400, split: { ...z }, firstParty: true, barWidth: 100, tint: '#a855f7' },
+  { key: 'audience',  icon: '🧩', name: 'In Audience',     desc: 'Matched & synced',      count: 9200,  split: { ...z, meta: 46, google: 22, linkedin: 24, tiktok: 2, dsp: 4, email: 2 }, barWidth: 80,  tint: '#8b5cf6' },
+  { key: 'onlp',      icon: '👁', name: 'On Landing Page', desc: 'ArkData pixel',         count: 3180,  split: { ...z, meta: 44, google: 29, linkedin: 19, tiktok: 2, dsp: 4, email: 2 }, pixel: true, barWidth: 42, tint: '#6366f1' },
+  { key: 'converted', icon: '✓',  name: 'Converted',       desc: 'Form / conversion',     count: 420,   split: { ...z, meta: 43, google: 27, linkedin: 22, dsp: 4, email: 4 }, barWidth: 18,  tint: '#3b82f6' },
+  { key: 'booked',    icon: '📅', name: 'Booked',          desc: 'Meeting booked',        count: 96,    split: { ...z, meta: 41, google: 26, linkedin: 28, dsp: 1, email: 4 }, barWidth: 9,   tint: '#14b8a6' },
+  { key: 'closed',    icon: '🏆', name: 'Closed',          desc: 'Deal won',              count: 38,    split: { ...z, meta: 39, google: 26, linkedin: 30, dsp: 1, email: 4 }, barWidth: 5,   tint: '#10b981' },
+];
+
+// ---- MARKETING funnel (aggregate, platform-reported) ----
+// impressions → clicks → visitors → form completes → booked → closed
+export const MARKETING_BASE: Stage[] = [
+  { key: 'impr',   icon: '📡', name: 'Impressions',    desc: 'Ad delivery',     count: 892000, split: { ...z, meta: 48, google: 31, linkedin: 14, tiktok: 3, dsp: 4 }, barWidth: 100, tint: '#6366f1' },
+  { key: 'click',  icon: '👆', name: 'Clicks',         desc: 'Ad clicks',       count: 12400,  split: { ...z, meta: 46, google: 30, linkedin: 17, tiktok: 2, dsp: 5 }, barWidth: 60,  tint: '#818cf8' },
+  { key: 'visit',  icon: '👁', name: 'Visitors',       desc: 'Pixel-tracked',   count: 3180,   split: { ...z, meta: 44, google: 29, linkedin: 19, tiktok: 2, dsp: 4, email: 2 }, pixel: true, barWidth: 38, tint: '#3b82f6' },
+  { key: 'form',   icon: '📝', name: 'Form Completes', desc: 'If applicable',   count: 1240,   split: { ...z, meta: 42, google: 28, linkedin: 22, dsp: 4, email: 4 }, barWidth: 22,  tint: '#22d3ee' },
+  { key: 'booked', icon: '📅', name: 'Booked',         desc: 'Meetings',        count: 96,     split: { ...z, meta: 41, google: 26, linkedin: 28, dsp: 1, email: 4 }, barWidth: 9,   tint: '#14b8a6' },
+  { key: 'closed', icon: '🏆', name: 'Closed',         desc: 'Won',             count: 38,     split: { ...z, meta: 39, google: 26, linkedin: 30, dsp: 1, email: 4 }, barWidth: 5,   tint: '#10b981' },
 ];
 
 export const TAM = 15596;
 
-// Attribution-model presets change how conversion credit splits across platforms.
+// Attribution-model presets (Marketing view only) — re-split conversion credit.
 export const ATTRIBUTION_PRESETS: Record<string, Record<PlatformKey, number>> = {
   last:   { ...z, meta: 41, google: 26, linkedin: 28, dsp: 1, email: 4 },
   first:  { ...z, meta: 55, google: 30, linkedin: 9,  dsp: 4, email: 2 },
@@ -75,6 +88,23 @@ export const PIPELINES = [
 
 export const DATE_RANGES = ['Last 7 days', 'Last 14 days', 'Last 30 days', 'Last 60 days'] as const;
 
+// "Who" demographic breakdown for the People-funnel drill panel.
+export interface WhoGroup {
+  title: string;
+  items: { label: string; pct: number }[];
+}
+export const WHO_GROUPS: WhoGroup[] = [
+  { title: 'Seniority', items: [
+    { label: 'C-Suite', pct: 22 }, { label: 'VP', pct: 31 }, { label: 'Director', pct: 27 }, { label: 'Manager', pct: 20 },
+  ] },
+  { title: 'Company size', items: [
+    { label: '1–50', pct: 18 }, { label: '51–200', pct: 34 }, { label: '201–1k', pct: 29 }, { label: '1k+', pct: 19 },
+  ] },
+  { title: 'Top metros', items: [
+    { label: 'Austin', pct: 16 }, { label: 'Denver', pct: 13 }, { label: 'Boston', pct: 12 }, { label: 'Seattle', pct: 11 }, { label: 'Other', pct: 48 },
+  ] },
+];
+
 // ---- helpers ----
 
 export function fmt(n: number): string {
@@ -90,7 +120,6 @@ export function fmtMoney(cents: number): string {
   return '$' + d.toFixed(2);
 }
 
-/** Absolute per-platform counts for a stage. */
 export function splitAbs(stage: Stage): Record<PlatformKey, number> {
   const sum = PLATFORM_ORDER.reduce((a, p) => a + (stage.split[p] || 0), 0);
   const out = { ...z };
@@ -100,11 +129,13 @@ export function splitAbs(stage: Stage): Record<PlatformKey, number> {
   return out;
 }
 
-export function scaledStages(scale: number, convSplit: Record<PlatformKey, number>): Stage[] {
-  return BASE_STAGES.map((s) => ({
+export function scaledStages(mode: FunnelMode, scale: number, convSplit: Record<PlatformKey, number>): Stage[] {
+  const base = mode === 'people' ? PEOPLE_BASE : MARKETING_BASE;
+  const convKey = mode === 'people' ? 'converted' : 'form';
+  return base.map((s) => ({
     ...s,
-    count: Math.round(s.count * scale),
-    split: s.key === 'conv' ? { ...convSplit } : { ...s.split },
+    count: Math.max(s.barWidth > 6 ? 1 : 1, Math.round(s.count * scale)),
+    split: mode === 'marketing' && s.key === convKey ? { ...convSplit } : { ...s.split },
   }));
 }
 
