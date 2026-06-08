@@ -13,6 +13,12 @@ export default defineConfig({
         target: 'http://localhost:8082',
         changeOrigin: true,
       },
+      // Auth routes are mounted at /auth (not /api) on the backend; proxy them too
+      // so the frontend login request reaches Express in dev.
+      '/auth': {
+        target: 'http://localhost:8082',
+        changeOrigin: true,
+      },
     },
   },
 })
