@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Full-Funnel Attribution — Live Mockup</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+:root{
+  --bg:#030712;--panel:rgba(255,255,255,.03);--panel-2:rgba(255,255,255,.05);
+  --border:rgba(255,255,255,.08);--border-2:rgba(255,255,255,.14);
+  --text:#e8e8ec;--dim:#9aa0ad;--muted:#5b626f;
+  --purple:#a855f7;--purple-2:#7c3aed;
+  --meta:#1877F2;--google:#ea4335;--linkedin:#0A66C2;--tiktok:#25F4EE;--dsp:#10b981;--email:#f59e0b;
+  --teal:#14b8a6;--emerald:#10b981;--rose:#fb7185;--amber:#fbbf24;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;-webkit-font-smoothing:antialiased}
+body{min-height:100vh;background:radial-gradient(1200px 600px at 80% -10%,rgba(124,58,237,.10),transparent),radial-gradient(900px 500px at 0% 100%,rgba(20,184,166,.06),transparent),var(--bg)}
+.glass{background:var(--panel);border:1px solid var(--border);border-radius:16px;backdrop-filter:blur(12px)}
+.mono{font-family:'JetBrains Mono',monospace}
+.wrap{max-width:1340px;margin:0 auto;padding:20px 20px 80px}
+.tabnum{font-variant-numeric:tabular-nums}
+
+/* header */
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.brand h1{font-size:20px;font-weight:800;letter-spacing:-.02em}
+.brand h1 .accent{color:var(--purple)}
+.brand p{font-size:11px;color:var(--dim);margin-top:2px}
+.controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:500;color:var(--dim);background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:7px 11px;cursor:pointer;transition:.15s;-webkit-tap-highlight-color:transparent}
+.pill:hover{color:var(--text);border-color:var(--border-2)}
+.pill.active{color:#fff;background:rgba(168,85,247,.18);border-color:rgba(168,85,247,.4)}
+.pill .dot{width:7px;height:7px;border-radius:50%}
+.seg{display:inline-flex;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:3px;gap:2px}
+.seg button{font-family:inherit;font-size:11px;font-weight:600;color:var(--dim);background:transparent;border:none;border-radius:7px;padding:6px 10px;cursor:pointer;transition:.15s}
+.seg button.on{color:#fff;background:rgba(168,85,247,.25)}
+.live-badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--emerald);background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);border-radius:8px;padding:6px 10px}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--emerald);box-shadow:0 0 0 0 rgba(16,185,129,.6);animation:pulse 1.8s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(16,185,129,.55)}70%{box-shadow:0 0 0 7px rgba(16,185,129,0)}100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}}
+
+/* KPI row */
+.kpis{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin-bottom:18px}
+.kpi{padding:13px 14px}
+.kpi .label{font-size:9.5px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px}
+.kpi .val{font-size:19px;font-weight:800;letter-spacing:-.02em}
+.kpi .trend{display:flex;align-items:center;gap:3px;font-size:10.5px;font-weight:700;margin-top:3px}
+.up{color:var(--emerald)}.down{color:var(--rose)}
+.kpi.hero{background:linear-gradient(135deg,rgba(168,85,247,.14),rgba(124,58,237,.05));border-color:rgba(168,85,247,.3)}
+.kpi.hero .label{color:#c8a8f0}
+
+/* main grid */
+.grid{display:grid;grid-template-columns:1fr 320px;gap:16px}
+@media(max-width:980px){.grid{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(3,1fr)}}
+
+/* funnel */
+.card-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.card-h h3{font-size:13px;font-weight:700}
+.card-h .sub{font-size:10.5px;color:var(--muted)}
+.funnel{padding:18px 20px}
+.legend{display:flex;gap:13px;flex-wrap:wrap;margin:10px 0 18px}
+.legend span{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;color:var(--dim);font-weight:500}
+.legend i{width:9px;height:9px;border-radius:2px;display:inline-block}
+
+.stage{display:flex;align-items:center;gap:14px;margin-bottom:7px;cursor:pointer;border-radius:12px;padding:7px 8px;transition:.15s}
+.stage:hover{background:rgba(255,255,255,.025)}
+.stage.sel{background:rgba(168,85,247,.08);box-shadow:inset 0 0 0 1px rgba(168,85,247,.25)}
+.stage .meta{width:140px;flex-shrink:0}
+.stage .meta .nm{font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px}
+.stage .meta .ic{font-size:13px}
+.stage .meta .ds{font-size:9px;color:var(--muted);margin-top:1px}
+.stage .barwrap{flex:1;display:flex;justify-content:center}
+.bar{height:38px;border-radius:7px;display:flex;overflow:hidden;box-shadow:0 1px 0 rgba(255,255,255,.06) inset;transition:width .8s cubic-bezier(.2,.7,.2,1)}
+.bar .seg-fill{height:100%;transition:flex-basis .8s ease,width .8s ease;position:relative}
+.bar .seg-fill:after{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,rgba(255,255,255,.18),transparent 45%)}
+.stage .nums{width:118px;flex-shrink:0;text-align:right}
+.stage .nums .ct{font-size:15px;font-weight:800}
+.stage .nums .rt{font-size:9.5px;color:var(--muted)}
+.stage .nums .rt.good{color:var(--teal)}
+.conv-tag{font-size:9px;color:var(--amber);font-weight:600}
+
+/* drill panel */
+.side{display:flex;flex-direction:column;gap:16px}
+.drill{padding:16px 17px}
+.drill .ttl{font-size:12px;font-weight:700;display:flex;align-items:center;gap:7px;margin-bottom:2px}
+.drill .ttl .ic{font-size:14px}
+.drill .meta-line{font-size:10px;color:var(--muted);margin-bottom:14px}
+.brk-row{display:flex;align-items:center;gap:9px;margin-bottom:10px}
+.brk-row .pdot{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+.brk-row .pnm{font-size:11px;font-weight:600;width:64px;flex-shrink:0}
+.brk-row .ptrack{flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden}
+.brk-row .pbar{height:100%;border-radius:3px;transition:width .6s ease}
+.brk-row .pct{font-size:10.5px;font-weight:700;width:64px;text-align:right;color:var(--dim)}
+.brk-row .pct b{color:var(--text)}
+
+/* live feed */
+.feed{padding:16px 17px;display:flex;flex-direction:column;min-height:280px}
+.feed .ttl{font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.feed-list{flex:1;overflow:hidden;position:relative;display:flex;flex-direction:column;gap:7px}
+.ev{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:10px;background:var(--panel-2);border:1px solid var(--border);animation:slidein .45s ease}
+@keyframes slidein{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+.ev .pdot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.ev .txt{font-size:11px;flex:1;line-height:1.25}
+.ev .txt b{font-weight:600}
+.ev .txt .who{color:var(--dim)}
+.ev .t{font-size:9px;color:var(--muted)}
+.ev.conv{background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.22)}
+
+/* pixel-verified callout */
+.verify{padding:15px 17px}
+.verify .ttl{font-size:12px;font-weight:700;margin-bottom:3px}
+.verify p{font-size:10px;color:var(--muted);margin-bottom:13px;line-height:1.4}
+.vbar{display:flex;flex-direction:column;gap:9px}
+.vrow{display:flex;align-items:center;gap:9px}
+.vrow .vl{font-size:10.5px;width:96px;color:var(--dim)}
+.vrow .vt{flex:1;height:9px;border-radius:5px;background:rgba(255,255,255,.06);overflow:hidden}
+.vrow .vf{height:100%;border-radius:5px}
+.vrow .vv{font-size:11px;font-weight:800;width:46px;text-align:right}
+.gap-note{margin-top:11px;font-size:10px;color:var(--amber);background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.2);border-radius:8px;padding:8px 10px;line-height:1.4}
+
+/* pipeline tabs */
+.ptabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px}
+.foot{margin-top:22px;font-size:10px;color:var(--muted);text-align:center;line-height:1.6}
+.foot code{font-family:'JetBrains Mono',monospace;color:var(--dim)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HEADER -->
+  <div class="top">
+    <div class="brand">
+      <h1><span class="accent">Sales Match</span> — Full-Funnel Attribution</h1>
+      <p>Intent → Ad Audience → Impressions → Clicks → LP Visit (pixel) → Retarget → Convert · multi-platform, multi-touch</p>
+    </div>
+    <div class="controls">
+      <div class="live-badge"><span class="live-dot"></span> LIVE</div>
+      <div class="seg" id="modelSeg">
+        <button data-m="last" class="on">Last-touch</button>
+        <button data-m="first">First</button>
+        <button data-m="linear">Linear</button>
+        <button data-m="decay">Time-decay</button>
+      </div>
+      <span class="pill" id="rangePill">📅 Last 30 days ▾</span>
+      <span class="pill" id="tenantPill">🏢 All tenants ▾</span>
+    </div>
+  </div>
+
+  <!-- PIPELINE FILTER -->
+  <div class="ptabs" id="ptabs">
+    <span class="pill active" data-p="all">All Pipelines</span>
+    <span class="pill" data-p="sales"><span class="dot" style="background:#6366f1"></span>Sales Hires</span>
+    <span class="pill" data-p="csm"><span class="dot" style="background:#10b981"></span>CSM Hires</span>
+  </div>
+
+  <!-- KPI ROW -->
+  <div class="kpis" id="kpis">
+    <div class="kpi"><div class="label">Total Spend</div><div class="val tabnum" data-kpi="spend">$10.5K</div><div class="trend up">▲ 8.2%</div></div>
+    <div class="kpi"><div class="label">Impressions</div><div class="val tabnum" data-kpi="impr">892.0K</div><div class="trend down">▼ 2.1%</div></div>
+    <div class="kpi"><div class="label">Clicks</div><div class="val tabnum" data-kpi="clicks">12.4K</div><div class="trend up">▲ 12.3%</div></div>
+    <div class="kpi"><div class="label">Avg CTR</div><div class="val tabnum" data-kpi="ctr">1.39%</div><div class="trend up">▲ 14.7%</div></div>
+    <div class="kpi"><div class="label">Avg CPC</div><div class="val tabnum" data-kpi="cpc">$0.85</div><div class="trend up">▲ 5.3%</div></div>
+    <div class="kpi"><div class="label">Influenced Acct</div><div class="val tabnum" data-kpi="infl">4,321</div><div class="trend up">▲ 8.2%</div></div>
+    <div class="kpi hero"><div class="label">◆ Verified Conv</div><div class="val tabnum" data-kpi="conv">38</div><div class="trend up">▲ 22.0%</div></div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="grid">
+    <!-- FUNNEL -->
+    <div class="glass funnel">
+      <div class="card-h">
+        <div><h3>Pipeline Overview</h3></div>
+        <div class="sub">TAM 15,596 · ~3% in-market · <span style="color:var(--dim)">spend as of 14:05 · pixel live</span></div>
+      </div>
+      <div class="legend" id="legend"></div>
+      <div id="stages"></div>
+    </div>
+
+    <!-- SIDE -->
+    <div class="side">
+      <!-- DRILL DOWN -->
+      <div class="glass drill" id="drill">
+        <div class="ttl"><span class="ic" id="drillIc">👁</span><span id="drillNm">LP Visitors</span></div>
+        <div class="meta-line" id="drillMeta">ArkData pixel · person-level · click to drill into the map</div>
+        <div id="brk"></div>
+      </div>
+
+      <!-- PIXEL-VERIFIED VS CLAIMED -->
+      <div class="glass verify">
+        <div class="ttl">◆ Pixel-verified vs platform-claimed</div>
+        <p>First-party truth. The gap is over-attribution the ad platforms can't see past.</p>
+        <div class="vbar">
+          <div class="vrow"><span class="vl">Meta claims</span><div class="vt"><div class="vf" style="width:100%;background:var(--meta)"></div></div><span class="vv">61</span></div>
+          <div class="vrow"><span class="vl">◆ Pixel verified</span><div class="vt"><div class="vf" style="width:62%;background:var(--purple)"></div></div><span class="vv">38</span></div>
+        </div>
+        <div class="gap-note">⚠ 23 conversions (38%) claimed by Meta were never seen by the pixel — likely view-through or modeled.</div>
+      </div>
+
+      <!-- LIVE FEED -->
+      <div class="glass feed">
+        <div class="ttl"><span>◉ Live pixel feed</span><span class="mono" style="font-size:9px;color:var(--muted)" id="feedRate">~3.2/min</span></div>
+        <div class="feed-list" id="feed"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    Interactive mockup — numbers are simulated and tick live to illustrate the proposed UI. Built on the existing prototype's dark-glass theme + map drill-down.<br>
+    Stage breakdowns, attribution-model selector, freshness badges, live pixel feed, and the pixel-verified-vs-claimed panel are the new surfaces proposed in <code>docs/full-funnel-attribution-analysis.md</code>.
+  </div>
+</div>
+
+<script>
+// ---------- platform palette ----------
+const PLAT = {
+  meta:{nm:'Meta',c:'#1877F2'}, google:{nm:'Google',c:'#ea4335'},
+  linkedin:{nm:'LinkedIn',c:'#0A66C2'}, tiktok:{nm:'TikTok',c:'#25F4EE'},
+  dsp:{nm:'DSP',c:'#10b981'}, email:{nm:'Email',c:'#f59e0b'}
+};
+const PLAT_ORDER = ['meta','google','linkedin','tiktok','dsp','email'];
+
+// ---------- funnel model: count + per-platform split ----------
+// split values are relative weights; absolute per-platform = count * weight/sumWeights
+const STAGES = [
+  {key:'intent',  ic:'🔍', nm:'Intent Audience', ds:'Intent vendor', count:965,  split:{meta:0,google:0,linkedin:0,tiktok:0,dsp:0,email:0}, seed:true},
+  {key:'impr',    ic:'📡', nm:'Impressions',     ds:'Ad delivery',   count:892000,split:{meta:48,google:31,linkedin:14,tiktok:3,dsp:4,email:0}},
+  {key:'click',   ic:'👆', nm:'Clicks',          ds:'Ad clicks',     count:12400, split:{meta:46,google:30,linkedin:17,tiktok:2,dsp:5,email:0}},
+  {key:'visit',   ic:'👁', nm:'LP Visitors',     ds:'ArkData pixel', count:3180,  split:{meta:44,google:29,linkedin:19,tiktok:2,dsp:4,email:2}, pixel:true},
+  {key:'retarget',ic:'🎯', nm:'Retarget Aud.',   ds:'Pixel → sync',  count:2910,  split:{meta:52,google:24,linkedin:20,tiktok:0,dsp:2,email:2}},
+  {key:'conv',    ic:'✓',  nm:'Converted',       ds:'Verified',      count:38,    split:{meta:41,google:26,linkedin:28,tiktok:0,dsp:1,email:4}}
+];
+const WIDTHS=[64,100,46,30,26,9]; // visual bar widths (impr is the wide reference)
+// reorder so widest (impressions) defines 100%; intent is the seed
+const BARW = {intent:60, impr:100, click:42, visit:28, retarget:25, conv:9};
+
+const STAGE_TINT=['#a855f7','#6366f1','#818cf8','#3b82f6','#14b8a6','#10b981'];
+
+function fmt(n){
+  if(n>=1e6)return (n/1e6).toFixed(1)+'M';
+  if(n>=1e3)return (n/1e3).toFixed(1)+'K';
+  return Math.round(n).toLocaleString();
+}
+function splitAbs(st){
+  const sum = PLAT_ORDER.reduce((a,p)=>a+(st.split[p]||0),0);
+  const o={};
+  PLAT_ORDER.forEach(p=>{ o[p]= sum>0 ? Math.round(st.count*(st.split[p]||0)/sum) : 0; });
+  return o;
+}
+
+// ---------- render legend ----------
+document.getElementById('legend').innerHTML = PLAT_ORDER.map(p=>
+  `<span><i style="background:${PLAT[p].c}"></i>${PLAT[p].nm}</span>`).join('') +
+  `<span><i style="background:var(--purple)"></i>◆ Pixel-owned stage</span>`;
+
+// ---------- render funnel ----------
+let selected = 'visit';
+function renderFunnel(){
+  const host=document.getElementById('stages');
+  host.innerHTML='';
+  STAGES.forEach((st,i)=>{
+    const abs = splitAbs(st);
+    const prev = i>0 ? STAGES[i-1].count : null;
+    const rate = prev ? (st.count/prev*100) : null;
+    const w = BARW[st.key];
+    const segHtml = st.seed
+      ? `<div class="seg-fill" style="width:100%;background:linear-gradient(135deg,var(--purple),var(--purple-2))"></div>`
+      : PLAT_ORDER.map(p=>{
+          const v=abs[p]; if(!v)return '';
+          const pc = st.count? (v/st.count*100):0;
+          return `<div class="seg-fill" style="flex-basis:${pc}%;background:${PLAT[p].c}"></div>`;
+        }).join('');
+    const goodRate = rate && rate>=80;
+    const conv = (st.key==='conv');
+    const el=document.createElement('div');
+    el.className='stage'+(st.key===selected?' sel':'');
+    el.dataset.key=st.key;
+    el.innerHTML=`
+      <div class="meta">
+        <div class="nm"><span class="ic">${st.ic}</span>${st.nm}${st.pixel?' <span style="color:var(--purple);font-size:10px">◆</span>':''}</div>
+        <div class="ds">${st.ds}</div>
+      </div>
+      <div class="barwrap"><div class="bar" style="width:${w}%">${segHtml}</div></div>
+      <div class="nums">
+        <div class="ct tabnum" data-stage="${st.key}">${fmt(st.count)}</div>
+        ${rate!=null?`<div class="rt ${goodRate?'good':''} tabnum">${rate.toFixed(1)}% from above</div>`:'<div class="rt tabnum" style="color:var(--purple)">seed audience</div>'}
+        ${i===0?`<div class="conv-tag">${(st.count/15596*100).toFixed(1)}% of TAM in-market</div>`:''}
+      </div>`;
+    el.onclick=()=>{selected=st.key;renderFunnel();renderDrill();};
+    host.appendChild(el);
+  });
+}
+
+// ---------- drill panel ----------
+function renderDrill(){
+  const st=STAGES.find(s=>s.key===selected);
+  document.getElementById('drillIc').textContent=st.ic;
+  document.getElementById('drillNm').textContent=st.nm;
+  document.getElementById('drillMeta').textContent =
+    st.pixel ? 'ArkData pixel · person-level · click → drill into the map explorer'
+    : st.seed ? 'Intent-vendor seed audience · the in-market core'
+    : st.key==='conv' ? 'Deterministic, pixel-verified conversions, attributed to first/last touch'
+    : 'Platform-reported delivery · attributed by current model';
+  const abs=splitAbs(st);
+  const max=Math.max(...PLAT_ORDER.map(p=>abs[p]),1);
+  const brk=document.getElementById('brk');
+  if(st.seed){ brk.innerHTML=`<div style="font-size:11px;color:var(--muted);line-height:1.5">No platform split — this is the upstream intent audience before any ad delivery. ${fmt(st.count)} in-market accounts seeded into platform Custom Audiences downstream.</div>`; return; }
+  brk.innerHTML = PLAT_ORDER.filter(p=>abs[p]>0).map(p=>{
+    const v=abs[p], pc=st.count?(v/st.count*100):0;
+    return `<div class="brk-row">
+      <span class="pdot" style="background:${PLAT[p].c}"></span>
+      <span class="pnm">${PLAT[p].nm}</span>
+      <span class="ptrack"><span class="pbar" style="width:${v/max*100}%;background:${PLAT[p].c}"></span></span>
+      <span class="pct"><b>${fmt(v)}</b> · ${pc.toFixed(0)}%</span>
+    </div>`;
+  }).join('');
+}
+
+// ---------- live ticking ----------
+function jitter(){
+  // gently tick impressions/clicks/visits up to feel live
+  STAGES[1].count += Math.floor(Math.random()*180);            // impressions
+  if(Math.random()<0.6) STAGES[2].count += Math.floor(Math.random()*4); // clicks
+  if(Math.random()<0.4) STAGES[3].count += 1;                  // visits
+  if(Math.random()<0.1) STAGES[4].count += 1;                  // retarget
+  document.querySelectorAll('[data-stage]').forEach(n=>{
+    const st=STAGES.find(s=>s.key===n.dataset.stage);
+    n.textContent=fmt(st.count);
+  });
+  // KPI impressions/clicks mirror
+  setKpi('impr',fmt(STAGES[1].count));
+  setKpi('clicks',fmt(STAGES[2].count));
+}
+function setKpi(k,v){const el=document.querySelector(`[data-kpi="${k}"]`);if(el)el.textContent=v;}
+
+// ---------- live feed ----------
+const FIRST=['A. Rivera','M. Chen','J. Okafor','S. Patel','L. Müller','D. Kim','R. Santos','T. Nguyen','K. Abara','P. Lindqvist','C. Romano','B. Haddad'];
+const ROLE=['VP Sales','Head of CS','CRO','Founder','COO','Dir. RevOps','VP Marketing','CXO'];
+const CO=['Northwind','Lumen Agency','BrightPath','Acme Growth','Vertex Media','Cobalt Co','Pioneer Labs','Maple & Co'];
+const CITY=['Austin TX','Denver CO','Miami FL','Seattle WA','Boston MA','Chicago IL','Atlanta GA'];
+let feedN=0;
+function pickPlat(){const w={meta:44,google:29,linkedin:19,email:4,dsp:2,tiktok:2};const r=Math.random()*100;let a=0;for(const k in w){a+=w[k];if(r<=a)return k;}return 'meta';}
+function emit(){
+  const feed=document.getElementById('feed');
+  const isConv = Math.random()<0.13;
+  const p=pickPlat();
+  const who=`${FIRST[Math.floor(Math.random()*FIRST.length)]} · ${ROLE[Math.floor(Math.random()*ROLE.length)]} @ ${CO[Math.floor(Math.random()*CO.length)]}`;
+  const ev=document.createElement('div');
+  ev.className='ev'+(isConv?' conv':'');
+  ev.innerHTML=`<span class="pdot" style="background:${isConv?'var(--emerald)':PLAT[p].c}"></span>
+    <span class="txt"><b>${isConv?'✓ Converted':'LP visit'}</b> <span class="who">${who}</span><br>
+    <span style="color:var(--muted);font-size:9.5px">${CITY[Math.floor(Math.random()*CITY.length)]} · via ${PLAT[p].nm}${isConv?' · pixel-verified':''}</span></span>
+    <span class="t">now</span>`;
+  feed.prepend(ev);
+  // age timestamps
+  [...feed.children].forEach((c,i)=>{const t=c.querySelector('.t');if(i>0&&t)t.textContent=`${i*7+Math.floor(Math.random()*5)}s`;});
+  while(feed.children.length>6) feed.removeChild(feed.lastChild);
+  if(isConv){ STAGES[5].count+=1; setKpi('conv',fmt(STAGES[5].count)); document.querySelector('[data-stage="conv"]').textContent=fmt(STAGES[5].count); }
+  feedN++;
+}
+
+// ---------- controls ----------
+document.getElementById('modelSeg').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b)return;
+  document.querySelectorAll('#modelSeg button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+  // simulate model changing conversion credit per platform on the conv stage
+  const m=b.dataset.m;
+  const presets={
+    last:{meta:41,google:26,linkedin:28,tiktok:0,dsp:1,email:4},
+    first:{meta:55,google:30,linkedin:9,tiktok:0,dsp:4,email:2},
+    linear:{meta:46,google:27,linkedin:20,tiktok:0,dsp:3,email:4},
+    decay:{meta:43,google:25,linkedin:26,tiktok:0,dsp:2,email:4}
+  };
+  STAGES[5].split=presets[m];
+  if(selected==='conv')renderDrill();
+  renderFunnel();
+});
+document.getElementById('ptabs').addEventListener('click',e=>{
+  const t=e.target.closest('.pill'); if(!t)return;
+  document.querySelectorAll('#ptabs .pill').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  const p=t.dataset.p;
+  const scale = p==='all'?1 : p==='sales'?0.4 : 0.6;
+  // rescale counts (illustrative)
+  const base=[965,892000,12400,3180,2910,38];
+  STAGES.forEach((s,i)=>s.count=Math.round(base[i]*scale));
+  renderFunnel();renderDrill();
+});
+
+// ---------- boot ----------
+renderFunnel();renderDrill();
+for(let i=0;i<5;i++) emit();
+setInterval(jitter, 1600);
+setInterval(emit, 2400);
+</script>
+</body>
+</html>
+</content>
