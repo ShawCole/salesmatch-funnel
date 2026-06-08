@@ -38,6 +38,14 @@ curl -s "localhost:8082/api/funnel?days=7" -H "Authorization: Bearer $TOKEN" | j
 # Then mark Tasks 2,3,4,5,8 [x] and run finishing-a-development-branch.
 ```
 
+## Security review (commit 28b3cad — all 4 findings resolved)
+- JWT secret: required (>=32 chars) in production; dev fallback only outside prod.
+- JWT verify: pinned to HS256 + claim-shape validation (alg:none forgery → 401, verified).
+- RLS: removed the decorative `ENABLE ROW LEVEL SECURITY` lines (owner bypasses them).
+  Tenant isolation is APP-LEVEL via `services/scoping.ts`; real Postgres RLS (FORCE +
+  per-request `SET LOCAL app.tenant_id` + non-owner role) is deferred to Plan 4.
+- Seed: refuses to run in production (SEED_FORCE override); password from SEED_PASSWORD.
+
 ## Future hardening (out of Plan 1 scope, noted during execution)
 - Express has no error handler → DB/runtime errors return the default HTML stack-trace
   page (leaks internals). Add a JSON error handler before Cloud Run deploy (Plan 5).
