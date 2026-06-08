@@ -13,13 +13,35 @@ user not in docker group). Awaiting Shaw to provision PG (apt/docker/Cloud SQL).
 
 ## Task Status
 - [x] Task 1: Backend Scaffold + Express Server — DONE (commit c5f8566). `curl /api/health` → ok via tsx.
-- [ ] Task 2: Database Schema + Migration Runner — BLOCKED (needs Postgres).
-- [ ] Task 3: Auth System — JWT + Role Hierarchy — BLOCKED (needs PG to test login).
-- [ ] Task 4: Dev Seed Data — BLOCKED (needs Postgres).
-- [ ] Task 5: Core API Routes — Funnel + Tenants — BLOCKED (needs Postgres).
+- [~] Task 2: Database Schema + Migration Runner — CODE STAGED (commit b139b33), tsc clean. PENDING: run `npm run migrate` (needs PG).
+- [~] Task 3: Auth System — JWT + Role Hierarchy — CODE STAGED (b139b33), wiring verified (401 guard works, /auth/login reaches pg). PENDING: real login (needs PG).
+- [~] Task 4: Dev Seed Data — CODE STAGED (b139b33). PENDING: run `npm run seed` (needs PG).
+- [~] Task 5: Core API Routes — Funnel + Tenants — CODE STAGED (b139b33), routes wired. PENDING: scoped-query verification with seeded data (needs PG).
 - [x] Task 6: Frontend Auth Context + Role Router — DONE (commit 0887395). `npm run build` green; dev server serves SPA 200.
 - [x] Task 7: Widget System Foundation — DONE (commit 1e3bbf2). Typechecks/builds; not yet wired into routing (Plan 3).
-- [ ] Task 8: Widget Layout API Route — BLOCKED (needs Postgres).
+- [~] Task 8: Widget Layout API Route — CODE STAGED (b139b33), route wired. PENDING: GET/PUT round-trip with a real user (needs PG).
+
+Legend: [x] done+verified · [~] code written & typechecked, runtime verification pending Postgres · [ ] not started.
+
+## When Postgres is available — exact resume steps
+```
+# (after PG is reachable at DATABASE_URL; default postgresql://localhost:5432/salesmatch)
+createdb salesmatch                       # or via the chosen provider
+cd /home/shaw/repos/salesmatch-funnel/server
+npm run migrate                           # expect: Applying 001-init.sql -> ✓ -> Migrations complete
+npm run seed                              # expect: Seed complete + 4 dev logins (pw dev123)
+npm run dev &                             # server on :8082
+# Verify scoped isolation:
+TOKEN=$(curl -s -X POST localhost:8082/auth/login -H 'Content-Type: application/json' \
+  -d '{"email":"client@salesmatch.co","password":"dev123"}' | jq -r .token)
+curl -s "localhost:8082/api/funnel?days=7" -H "Authorization: Bearer $TOKEN" | jq '.stages|keys'
+# Then mark Tasks 2,3,4,5,8 [x] and run finishing-a-development-branch.
+```
+
+## Future hardening (out of Plan 1 scope, noted during execution)
+- Express has no error handler → DB/runtime errors return the default HTML stack-trace
+  page (leaks internals). Add a JSON error handler before Cloud Run deploy (Plan 5).
+- `npm run build` (tsc) is typecheck-only (noEmit); add a real emit/bundle step for prod.
 
 ## BLOCKER (resolve first)
 Local Postgres is unavailable on this VPS:
