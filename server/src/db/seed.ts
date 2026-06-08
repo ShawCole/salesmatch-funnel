@@ -2,7 +2,13 @@ import bcrypt from 'bcryptjs';
 import { pool } from './pool.ts';
 
 async function seed() {
-  const hash = await bcrypt.hash('dev123', 12);
+  // Never seed known-weak demo accounts into a production database.
+  if ((process.env.NODE_ENV ?? 'development') === 'production' && !process.env.SEED_FORCE) {
+    console.error('Refusing to run dev seed in production. Set SEED_FORCE=1 to override.');
+    process.exit(1);
+  }
+  const seedPassword = process.env.SEED_PASSWORD ?? 'dev123';
+  const hash = await bcrypt.hash(seedPassword, 12);
 
   // ArkData admin tenant
   const adminRes = await pool.query(`
@@ -99,7 +105,7 @@ async function seed() {
   }
 
   console.log('Seed complete.');
-  console.log('Dev logins (password: dev123):');
+  console.log(`Dev logins (password: ${process.env.SEED_PASSWORD ? '<from SEED_PASSWORD>' : 'dev123'}):`);
   console.log('  admin@arkdata.io       — admin');
   console.log('  mp@demo-agency.com     — meta_partner');
   console.log('  partner@fastfundleads.com — partner');

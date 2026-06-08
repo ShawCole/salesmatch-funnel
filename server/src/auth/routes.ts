@@ -34,7 +34,7 @@ authRouter.post('/login', async (req, res) => {
   const token = jwt.sign(
     { id: user.id, tenantId: user.tenant_id, role: user.role, email: user.email },
     config.jwtSecret,
-    { expiresIn: '7d' },
+    { expiresIn: '7d', algorithm: 'HS256' },
   );
 
   res.json({

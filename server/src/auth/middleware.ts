@@ -25,7 +25,19 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
   }
 
   try {
-    const payload = jwt.verify(header.slice(7), config.jwtSecret) as AuthUser;
+    // Pin the algorithm to prevent algorithm-confusion attacks (e.g. alg:none).
+    const payload = jwt.verify(header.slice(7), config.jwtSecret, {
+      algorithms: ['HS256'],
+    }) as AuthUser;
+    // Validate the claim shape before trusting it downstream.
+    if (
+      !payload ||
+      typeof payload.id !== 'string' ||
+      typeof payload.tenantId !== 'string' ||
+      typeof payload.role !== 'string'
+    ) {
+      return res.status(401).json({ error: 'Invalid token claims' });
+    }
     req.user = payload;
     next();
   } catch {

@@ -114,11 +114,12 @@ CREATE TABLE conversion_events (
 
 CREATE INDEX idx_conversion_events_tenant ON conversion_events(tenant_id);
 
--- Row-level security policies
-ALTER TABLE tenants ENABLE ROW LEVEL SECURITY;
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE pipelines ENABLE ROW LEVEL SECURITY;
-ALTER TABLE campaigns ENABLE ROW LEVEL SECURITY;
-ALTER TABLE funnel_events ENABLE ROW LEVEL SECURITY;
-ALTER TABLE widget_layouts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE conversion_events ENABLE ROW LEVEL SECURITY;
+-- NOTE on tenant isolation:
+-- Isolation is currently enforced at the APPLICATION layer via services/scoping.ts
+-- (visibleTenantIds + scopeWhere), which constrains every query to the caller's
+-- visible tenant subtree. We intentionally do NOT enable Postgres ROW LEVEL
+-- SECURITY here: the app connects as the table owner, so RLS (without FORCE +
+-- per-request `SET LOCAL app.tenant_id` + a non-owner role) would be bypassed and
+-- give a false sense of DB-level isolation. True RLS (FORCE policies reading
+-- current_setting('app.tenant_id') with a dedicated app role) is deferred to the
+-- multi-tenant hardening pass in Plan 4.
