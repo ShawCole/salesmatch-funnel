@@ -1,4 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { LoginPage } from './views/LoginPage';
 import { FilterProvider } from './contexts/FilterContext';
 import { PipelineDashboard } from './components/funnel/PipelineDashboard';
 import { MapView } from './components/MapView';
@@ -19,7 +21,6 @@ import { CompanyRevenueCard } from './components/cards/CompanyRevenueCard';
 
 const MOBILE_BREAKPOINT = 768;
 
-// Percentage-based positions for desktop draggable cards: [xPct, yPct]
 const PCT_POSITIONS: Record<string, [number, number]> = {
   'family':          [0.025, 0.100],
   'language':        [0.207, 0.100],
@@ -42,7 +43,6 @@ function computePositions() {
   return result;
 }
 
-// Mobile grid order (left-to-right, top-to-bottom)
 const GRID_ORDER = [
   'headcount',        'company-revenue',
   'age-gender',       'top-cities',
@@ -51,7 +51,8 @@ const GRID_ORDER = [
   'language',
 ];
 
-function App() {
+function AuthenticatedApp() {
+  const { user, logout } = useAuth();
   const [view, setView] = useState<'funnel' | 'map'>(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get('view') === 'map' ? 'map' : 'funnel';
@@ -77,7 +78,6 @@ function App() {
     setVisibility(prev => ({ ...prev, [id]: !prev[id] }));
   }, []);
 
-  // Desktop: draggable card entries
   const desktopCards: { id: string; node: React.ReactNode }[] = [
     { id: 'age-gender',       node: <AgeGenderCard onClose={() => onToggle('age-gender')} /> },
     { id: 'top-cities',       node: <TopCitiesCard onClose={() => onToggle('top-cities')} /> },
@@ -90,7 +90,6 @@ function App() {
     { id: 'company-revenue',  node: <CompanyRevenueCard onClose={() => onToggle('company-revenue')} /> },
   ];
 
-  // Mobile: grid card map
   const mobileCardMap: Record<string, React.ReactNode> = {
     'age-gender':       <AgeGenderCard onClose={() => onToggle('age-gender')} compact />,
     'top-cities':       <TopCitiesCard onClose={() => onToggle('top-cities')} compact />,
@@ -105,9 +104,16 @@ function App() {
 
   const visibleMobileCards = GRID_ORDER.filter(id => visibility[id]);
 
-  // View toggle component
   const ViewToggle = () => (
     <div className="fixed top-4 right-4 z-[300] flex gap-1 glass rounded-lg p-1">
+      {user && (
+        <button
+          onClick={logout}
+          className="px-3 py-1.5 rounded-md text-xs font-medium text-gray-400 hover:text-white transition-all"
+        >
+          Sign Out
+        </button>
+      )}
       <button
         onClick={() => setView('funnel')}
         className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${view === 'funnel' ? 'bg-purple-600/40 text-purple-200' : 'text-gray-400 hover:text-white'}`}
@@ -123,7 +129,6 @@ function App() {
     </div>
   );
 
-  // Funnel Dashboard view
   if (view === 'funnel') {
     return (
       <>
@@ -177,7 +182,6 @@ function App() {
             </div>
             <MobileChartBar visibility={visibility} onToggle={onToggle} />
           </div>
-          {/* Collapse / expand handle */}
           <button
             onClick={() => setPanelOpen(prev => !prev)}
             className="absolute left-1/2 -translate-x-1/2 z-30 pointer-events-auto px-6 py-1 rounded-t-lg bg-gray-950/90 backdrop-blur border border-b-0 border-white/10 text-gray-400 transition-all"
@@ -192,7 +196,6 @@ function App() {
     );
   }
 
-  // Desktop: full-screen map with draggable floating cards
   return (
     <FilterProvider>
       <div className="relative w-screen h-screen overflow-hidden bg-gray-950">
@@ -222,4 +225,23 @@ function App() {
   );
 }
 
-export default App;
+function App() {
+  const { user } = useAuth();
+
+  // Allow unauthenticated access if ?demo=true (preserves current prototype behavior)
+  const isDemo = new URLSearchParams(window.location.search).get('demo') === 'true';
+
+  if (!user && !isDemo) {
+    return <LoginPage />;
+  }
+
+  return <AuthenticatedApp />;
+}
+
+export default function AppWrapper() {
+  return (
+    <AuthProvider>
+      <App />
+    </AuthProvider>
+  );
+}
