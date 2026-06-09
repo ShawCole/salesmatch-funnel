@@ -149,7 +149,7 @@ function AuthenticatedApp() {
     const ROLES: Role[] = ['admin', 'meta_partner', 'partner', 'tenant'];
 
     return (
-      <div className="flex h-screen flex-col bg-[#030712]">
+      <div className="flex h-dvh flex-col bg-[#030712]">
         {/* Persona + breadcrumb nav */}
         <div className="sticky top-0 z-50 flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-white/[0.06] bg-[#070b14]/90 px-4 py-2 backdrop-blur">
           <div className="flex items-center gap-2">
@@ -157,7 +157,7 @@ function AuthenticatedApp() {
             <div className="inline-flex gap-0.5 rounded-lg border border-white/[0.08] bg-white/[0.03] p-[3px]">
               {ROLES.map(r => (
                 <button key={r} onClick={() => { setRole(r); setDrillIds([]); }}
-                  className={`rounded-md px-2.5 py-1 text-[11px] font-semibold transition ${role === r ? 'bg-purple-500/25 text-white' : 'text-[#9aa0ad] hover:text-white'}`}>
+                  className={`whitespace-nowrap rounded-md px-2.5 py-1 text-[11px] font-semibold transition ${role === r ? 'bg-purple-500/25 text-white' : 'text-[#9aa0ad] hover:text-white'}`}>
                   {ROLE_LABEL[r]}
                 </button>
               ))}

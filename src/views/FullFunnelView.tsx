@@ -238,41 +238,44 @@ export function FullFunnelView({ onDrillToMap, tenantName, scaleFactor = 1 }: Fu
               {stages.map((st, i) => {
                 const prev = i > 0 ? stages[i - 1].count : null;
                 const rate = prev ? (st.count / prev * 100) : null;
-                const abs = splitAbs(st);
                 const goodRate = rate != null && rate >= 60;
                 const isSel = st.key === selected;
+                const rateText = rate != null ? `${rate.toFixed(1)}% from above` : (st.firstParty ? 'first-party list' : 'top of funnel');
+                const rateClass = rate != null ? (goodRate ? 'text-[#14b8a6]' : 'text-[#5b626f]') : 'text-[#a855f7]';
                 return (
                   <div key={st.key} onClick={() => setSelected(st.key)}
-                    className={`mb-[7px] flex cursor-pointer items-center gap-3.5 rounded-xl p-2 transition ${isSel ? 'bg-purple-500/[0.08] shadow-[inset_0_0_0_1px_rgba(168,85,247,.25)]' : 'hover:bg-white/[0.025]'}`}>
-                    <div className="w-[150px] flex-shrink-0">
-                      <div className="flex items-center gap-1.5 text-[12px] font-semibold">
-                        <span className="text-[13px]">{st.icon}</span>{st.name}
-                        {st.pixel && <span className="text-[10px] text-[#a855f7]">◆</span>}
+                    className={`mb-[7px] cursor-pointer rounded-xl p-2 transition ${isSel ? 'bg-purple-500/[0.08] shadow-[inset_0_0_0_1px_rgba(168,85,247,.25)]' : 'hover:bg-white/[0.025]'}`}>
+
+                    {/* mobile: stacked — name + count, full-width bar, rate */}
+                    <div className="sm:hidden">
+                      <div className="mb-1.5 flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 text-[12.5px] font-semibold">
+                          <span className="text-[13px]">{st.icon}</span>{st.name}
+                          {st.pixel && <span className="text-[10px] text-[#a855f7]">◆</span>}
+                        </div>
+                        <div className="text-[15px] font-extrabold tabular-nums">{fmt(st.count)}</div>
                       </div>
-                      <div className="mt-px text-[9px] text-[#5b626f]">{st.desc}</div>
-                    </div>
-                    <div className="flex flex-1 justify-center">
-                      <div className="flex h-[38px] overflow-hidden rounded-[7px] shadow-[inset_0_1px_0_rgba(255,255,255,.06)] transition-[width] duration-700"
-                        style={{ width: `${st.barWidth}%` }}>
-                        {st.firstParty ? (
-                          <div className="h-full w-full" style={{ background: 'linear-gradient(135deg,#a855f7,#7c3aed)' }} />
-                        ) : (
-                          PLATFORM_ORDER.map((p) => {
-                            const v = abs[p];
-                            if (!v) return null;
-                            const pc = st.count ? (v / st.count * 100) : 0;
-                            return <div key={p} className="h-full" style={{ flexBasis: `${pc}%`, background: PLATFORMS[p].color }} />;
-                          })
-                        )}
+                      <StageBar stage={st} />
+                      <div className="mt-1 flex items-center justify-between text-[9.5px] tabular-nums">
+                        <span className="text-[#5b626f]">{st.desc}</span>
+                        <span className={rateClass}>{rateText}</span>
                       </div>
                     </div>
-                    <div className="w-[120px] flex-shrink-0 text-right">
-                      <div className="text-[15px] font-extrabold tabular-nums">{fmt(st.count)}</div>
-                      {rate != null ? (
-                        <div className={`text-[9.5px] tabular-nums ${goodRate ? 'text-[#14b8a6]' : 'text-[#5b626f]'}`}>{rate.toFixed(1)}% from above</div>
-                      ) : (
-                        <div className="text-[9.5px] tabular-nums text-[#a855f7]">{st.firstParty ? 'first-party list' : 'top of funnel'}</div>
-                      )}
+
+                    {/* desktop: meta | bar | nums */}
+                    <div className="hidden items-center gap-3.5 sm:flex">
+                      <div className="w-[150px] flex-shrink-0">
+                        <div className="flex items-center gap-1.5 text-[12px] font-semibold">
+                          <span className="text-[13px]">{st.icon}</span>{st.name}
+                          {st.pixel && <span className="text-[10px] text-[#a855f7]">◆</span>}
+                        </div>
+                        <div className="mt-px text-[9px] text-[#5b626f]">{st.desc}</div>
+                      </div>
+                      <div className="flex flex-1 justify-center"><StageBar stage={st} /></div>
+                      <div className="w-[120px] flex-shrink-0 text-right">
+                        <div className="text-[15px] font-extrabold tabular-nums">{fmt(st.count)}</div>
+                        <div className={`text-[9.5px] tabular-nums ${rateClass}`}>{rateText}</div>
+                      </div>
                     </div>
                   </div>
                 );
@@ -381,6 +384,25 @@ export function FullFunnelView({ onDrillToMap, tenantName, scaleFactor = 1 }: Fu
           (deterministic, pixel-verified) and an aggregate Marketing funnel (platform-reported), bridged at Visitors ↔ On Landing Page and Booked → Closed.
         </footer>
       </div>
+    </div>
+  );
+}
+
+function StageBar({ stage }: { stage: Stage }) {
+  const abs = splitAbs(stage);
+  return (
+    <div className="flex h-[38px] overflow-hidden rounded-[7px] shadow-[inset_0_1px_0_rgba(255,255,255,.06)] transition-[width] duration-700"
+      style={{ width: `${stage.barWidth}%` }}>
+      {stage.firstParty ? (
+        <div className="h-full w-full" style={{ background: 'linear-gradient(135deg,#a855f7,#7c3aed)' }} />
+      ) : (
+        PLATFORM_ORDER.map((p) => {
+          const v = abs[p];
+          if (!v) return null;
+          const pc = stage.count ? (v / stage.count * 100) : 0;
+          return <div key={p} className="h-full" style={{ flexBasis: `${pc}%`, background: PLATFORMS[p].color }} />;
+        })
+      )}
     </div>
   );
 }
