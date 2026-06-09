@@ -19,6 +19,10 @@ interface FeedEvent {
 interface FullFunnelViewProps {
   /** Called when the user drills a pixel-owned stage into the geographic explorer. */
   onDrillToMap?: (stageKey: string) => void;
+  /** Tenant being viewed (when drilled in from a portfolio); defaults to the demo tenant. */
+  tenantName?: string;
+  /** Scales the funnel volumes for the specific tenant. */
+  scaleFactor?: number;
 }
 
 const DEFAULT_SELECTED: Record<FunnelMode, string> = { people: 'onlp', marketing: 'visit' };
@@ -26,22 +30,22 @@ const CONV_STAGE: Record<FunnelMode, string> = { people: 'converted', marketing:
 
 let feedSeq = 0;
 
-export function FullFunnelView({ onDrillToMap }: FullFunnelViewProps) {
+export function FullFunnelView({ onDrillToMap, tenantName, scaleFactor = 1 }: FullFunnelViewProps) {
   const [mode, setMode] = useState<FunnelMode>('people');
   const [pipeline, setPipeline] = useState<string>('all');
   const [model, setModel] = useState<string>('last');
   const [rangeIdx, setRangeIdx] = useState(2); // Last 30 days
   const [selected, setSelected] = useState<string>(DEFAULT_SELECTED.people);
   const [peopleDrill, setPeopleDrill] = useState<'who' | 'source'>('who');
-  const [stages, setStages] = useState<Stage[]>(() => scaledStages('people', 1, ATTRIBUTION_PRESETS.last));
+  const [stages, setStages] = useState<Stage[]>(() => scaledStages('people', scaleFactor, ATTRIBUTION_PRESETS.last));
   const [feed, setFeed] = useState<FeedEvent[]>([]);
 
-  // Reset the funnel when mode / pipeline / attribution model changes.
+  // Reset the funnel when mode / pipeline / attribution model / tenant changes.
   useEffect(() => {
-    const scale = PIPELINES.find((p) => p.key === pipeline)?.scale ?? 1;
-    setStages(scaledStages(mode, scale, ATTRIBUTION_PRESETS[model]));
+    const pipeScale = PIPELINES.find((p) => p.key === pipeline)?.scale ?? 1;
+    setStages(scaledStages(mode, pipeScale * scaleFactor, ATTRIBUTION_PRESETS[model]));
     setSelected(DEFAULT_SELECTED[mode]);
-  }, [mode, pipeline, model]);
+  }, [mode, pipeline, model, scaleFactor]);
 
   // Live ticking — bump the top-of-funnel stages so the board feels alive.
   useEffect(() => {
@@ -106,7 +110,7 @@ export function FullFunnelView({ onDrillToMap }: FullFunnelViewProps) {
   const matchRate = get('uploaded') ? Math.round(get('audience') / get('uploaded') * 100) : 0;
 
   return (
-    <div className="fixed inset-0 overflow-y-auto bg-[#030712] text-[#e8e8ec]"
+    <div className="min-h-full bg-[#030712] text-[#e8e8ec]"
          style={{ backgroundImage: 'radial-gradient(1200px 600px at 80% -10%,rgba(124,58,237,.10),transparent),radial-gradient(900px 500px at 0% 100%,rgba(20,184,166,.06),transparent)' }}>
       <div className="mx-auto max-w-[1340px] px-5 pt-5 pb-20">
 
@@ -114,7 +118,7 @@ export function FullFunnelView({ onDrillToMap }: FullFunnelViewProps) {
         <header className="mb-4 flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-xl font-extrabold tracking-tight">
-              <span className="text-[#a855f7]">Sales Match</span> — Full-Funnel Attribution
+              <span className="text-[#a855f7]">{tenantName ?? 'Sales Match'}</span> — Full-Funnel Attribution
             </h1>
             <p className="mt-0.5 text-[11px] text-[#9aa0ad]">
               {mode === 'people'

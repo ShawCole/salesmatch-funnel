@@ -1,6 +1,10 @@
 import { useState, useCallback, useEffect } from 'react';
 import { AuthProvider } from './contexts/AuthContext';
 import { FullFunnelView } from './views/FullFunnelView';
+import { PortfolioView } from './views/PortfolioView';
+import {
+  getNode, pathTo, ROLE_ROOT, ROLE_LABEL, type Role,
+} from './data/orgMock';
 import { PipelineDashboard } from './components/funnel/PipelineDashboard';
 import { FilterProvider } from './contexts/FilterContext';
 import { MapView } from './components/MapView';
@@ -56,6 +60,9 @@ function AuthenticatedApp() {
     const params = new URLSearchParams(window.location.search);
     return params.get('view') === 'map' ? 'map' : 'funnel';
   });
+  // Role-based navigation: persona + drill-down stack through the org tree.
+  const [role, setRole] = useState<Role>('tenant');
+  const [drillIds, setDrillIds] = useState<string[]>([]);
   const [visibility, setVisibility] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(CARD_CONFIGS.map(c => [c.id, true])),
   );
@@ -131,7 +138,52 @@ function AuthenticatedApp() {
         </>
       );
     }
-    return <FullFunnelView onDrillToMap={() => setView('map')} />;
+
+    const currentId = drillIds.length ? drillIds[drillIds.length - 1] : ROLE_ROOT[role];
+    const node = getNode(currentId) ?? getNode(ROLE_ROOT.tenant)!;
+    // Breadcrumb from the current persona's root down to the current node.
+    const full = pathTo(node.id);
+    const rootIdx = full.findIndex(n => n.id === ROLE_ROOT[role]);
+    const crumbs = rootIdx >= 0 ? full.slice(rootIdx) : [node];
+
+    const ROLES: Role[] = ['admin', 'meta_partner', 'partner', 'tenant'];
+
+    return (
+      <div className="flex h-screen flex-col bg-[#030712]">
+        {/* Persona + breadcrumb nav */}
+        <div className="sticky top-0 z-50 flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-white/[0.06] bg-[#070b14]/90 px-4 py-2 backdrop-blur">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-[#5b626f]">Viewing as</span>
+            <div className="inline-flex gap-0.5 rounded-lg border border-white/[0.08] bg-white/[0.03] p-[3px]">
+              {ROLES.map(r => (
+                <button key={r} onClick={() => { setRole(r); setDrillIds([]); }}
+                  className={`rounded-md px-2.5 py-1 text-[11px] font-semibold transition ${role === r ? 'bg-purple-500/25 text-white' : 'text-[#9aa0ad] hover:text-white'}`}>
+                  {ROLE_LABEL[r]}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex items-center gap-1 text-[11px]">
+            {crumbs.map((c, i) => (
+              <span key={c.id} className="flex items-center gap-1">
+                {i > 0 && <span className="text-[#5b626f]">›</span>}
+                <button onClick={() => setDrillIds(crumbs.slice(1, i + 1).map(x => x.id))}
+                  className={`rounded px-1.5 py-0.5 transition ${i === crumbs.length - 1 ? 'font-bold text-white' : 'text-[#9aa0ad] hover:text-white'}`}>
+                  {c.name}
+                </button>
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Body: portfolio roll-up, or the funnel when a tenant leaf is selected */}
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {node.kind === 'tenant'
+            ? <FullFunnelView tenantName={node.name} scaleFactor={node.scale ?? 1} onDrillToMap={() => setView('map')} />
+            : <PortfolioView node={node} onDrill={(id) => setDrillIds([...drillIds, id])} />}
+        </div>
+      </div>
+    );
   }
 
   if (isMobile) {
