@@ -6,6 +6,9 @@ import {
   FEED_NAMES, FEED_ROLES, FEED_COMPANIES, FEED_CITIES, pickFeedPlatform, rand,
   type Stage, type PlatformKey, type FunnelMode,
 } from '../data/funnelMock';
+import { ReconciliationView } from './ReconciliationView';
+
+type ViewMode = FunnelMode | 'reconciliation';
 
 interface FeedEvent {
   id: number;
@@ -31,7 +34,7 @@ const CONV_STAGE: Record<FunnelMode, string> = { people: 'converted', marketing:
 let feedSeq = 0;
 
 export function FullFunnelView({ onDrillToMap, tenantName, scaleFactor = 1 }: FullFunnelViewProps) {
-  const [mode, setMode] = useState<FunnelMode>('people');
+  const [mode, setMode] = useState<ViewMode>('people');
   const [pipeline, setPipeline] = useState<string>('all');
   const [model, setModel] = useState<string>('last');
   const [rangeIdx, setRangeIdx] = useState(2); // Last 30 days
@@ -42,6 +45,7 @@ export function FullFunnelView({ onDrillToMap, tenantName, scaleFactor = 1 }: Fu
 
   // Reset the funnel when mode / pipeline / attribution model / tenant changes.
   useEffect(() => {
+    if (mode === 'reconciliation') return; // reconciliation has its own data source
     const pipeScale = PIPELINES.find((p) => p.key === pipeline)?.scale ?? 1;
     setStages(scaledStages(mode, pipeScale * scaleFactor, ATTRIBUTION_PRESETS[model]));
     setSelected(DEFAULT_SELECTED[mode]);
@@ -68,7 +72,8 @@ export function FullFunnelView({ onDrillToMap, tenantName, scaleFactor = 1 }: Fu
       const ev = makeEvent(0);
       setFeed((prev) => [ev, ...prev.map((e) => ({ ...e, ageSec: e.ageSec + 7 + Math.floor(Math.random() * 5) }))].slice(0, 6));
       if (ev.isConv) {
-        setStages((prev) => prev.map((s) => (s.key === CONV_STAGE[modeRef.current] ? { ...s, count: s.count + 1 } : s)));
+        const convKey = CONV_STAGE[modeRef.current as FunnelMode];
+        setStages((prev) => prev.map((s) => (s.key === convKey ? { ...s, count: s.count + 1 } : s)));
       }
     }, 2400);
     return () => clearInterval(emit);
@@ -123,7 +128,9 @@ export function FullFunnelView({ onDrillToMap, tenantName, scaleFactor = 1 }: Fu
             <p className="mt-0.5 text-[11px] text-[#9aa0ad]">
               {mode === 'people'
                 ? 'People funnel · first-party, person-level, pixel-verified — uploaded → audience → landing page → converted → booked → closed'
-                : 'Marketing funnel · platform-reported aggregate — impressions → clicks → visitors → form completes → booked → closed'}
+                : mode === 'marketing'
+                ? 'Marketing funnel · platform-reported aggregate — impressions → clicks → visitors → form completes → booked → closed'
+                : 'Reconciliation · why Meta, Google, GA4 and your CRM disagree — and where the claimed conversions actually go'}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -148,6 +155,7 @@ export function FullFunnelView({ onDrillToMap, tenantName, scaleFactor = 1 }: Fu
             {([
               { key: 'people', label: '👥 People Funnel', sub: 'person-level' },
               { key: 'marketing', label: '📊 Marketing', sub: 'aggregate' },
+              { key: 'reconciliation', label: '🔍 Reconciliation', sub: "why #s differ" },
             ] as const).map((m) => (
               <button key={m.key} onClick={() => setMode(m.key)}
                 className={`rounded-lg px-3.5 py-2 text-[12.5px] font-bold transition ${mode === m.key ? 'bg-purple-500/25 text-white shadow-[inset_0_0_0_1px_rgba(168,85,247,.4)]' : 'text-[#9aa0ad] hover:text-white'}`}>
@@ -192,6 +200,10 @@ export function FullFunnelView({ onDrillToMap, tenantName, scaleFactor = 1 }: Fu
           ))}
         </div>
 
+        {mode === 'reconciliation' ? (
+          <ReconciliationView scale={(PIPELINES.find((p) => p.key === pipeline)?.scale ?? 1) * scaleFactor} />
+        ) : (
+        <>
         {/* KPI ROW */}
         <div className="mb-[18px] grid grid-cols-2 gap-2.5 sm:grid-cols-4 lg:grid-cols-7">
           {kpis.map((k) => (
@@ -336,6 +348,10 @@ export function FullFunnelView({ onDrillToMap, tenantName, scaleFactor = 1 }: Fu
                 <div className="mt-[11px] rounded-lg border border-amber-400/20 bg-amber-400/[0.08] px-2.5 py-2 text-[10px] leading-snug text-[#fbbf24]">
                   ⚠ {gap} conversions ({gapPct}%) claimed by Meta were never seen by the pixel — likely view-through or modeled.
                 </div>
+                <button onClick={() => setMode('reconciliation')}
+                  className="mt-2.5 w-full rounded-lg border border-purple-500/30 bg-purple-500/10 py-2 text-[11px] font-semibold text-purple-200 transition hover:bg-purple-500/20">
+                  See full reconciliation →
+                </button>
               </div>
             ) : (
               <div className="glass rounded-2xl px-[17px] py-[15px]">
@@ -378,6 +394,8 @@ export function FullFunnelView({ onDrillToMap, tenantName, scaleFactor = 1 }: Fu
             </div>
           </aside>
         </div>
+        </>
+        )}
 
         <footer className="mt-[22px] text-center text-[10px] leading-relaxed text-[#5b626f]">
           Live demo — numbers are simulated and tick to illustrate the product. Two funnels: a person-level People funnel
