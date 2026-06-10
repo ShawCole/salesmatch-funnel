@@ -15,10 +15,10 @@ export function ReconciliationView({ scale = 1 }: ReconciliationViewProps) {
   const google = perPlatform[1];
 
   const kpis = [
-    { label: '◆ Meta verified', value: fmt(meta.verified), sub: `of ${fmt(meta.claimed)} claimed · −${meta.overClaimPct}%`, tint: meta.color },
-    { label: '◆ Google verified', value: fmt(google.verified), sub: `of ${fmt(google.claimed)} claimed · −${google.overClaimPct}%`, tint: google.color },
-    { label: '◆ Pixel-verified (unique)', value: fmt(pixelVerified), sub: 'single source of truth', tint: '#a855f7', hero: true },
-    { label: 'Overlap resolved', value: fmt(overlap), sub: 'claimed by BOTH', tint: '#a855f7' },
+    { label: 'Meta confirmed', value: fmt(meta.verified), sub: `of ${fmt(meta.claimed)} claimed · −${meta.overClaimPct}%`, tint: meta.color },
+    { label: 'Google confirmed', value: fmt(google.verified), sub: `of ${fmt(google.claimed)} claimed · −${google.overClaimPct}%`, tint: google.color },
+    { label: '◆ Pixel-verified truth', value: fmt(pixelVerified), sub: 'one number · unique people', tint: '#a855f7', hero: true },
+    { label: 'Overlap', value: fmt(overlap), sub: 'in BOTH confirmed counts', tint: '#a855f7' },
   ];
 
   return (
@@ -47,8 +47,10 @@ export function ReconciliationView({ scale = 1 }: ReconciliationViewProps) {
               <div className="text-[10.5px] text-[#5b626f]">never summed · {asOf}</div>
             </div>
             <p className="mb-4 text-[10.5px] leading-snug text-[#5b626f]">
-              The platforms can't see each other, so we reconcile each one separately against the pixel —
-              dropping the impression-only and unmatched conversions it could never verify.
+              There's only one pixel-verified truth (the {fmt(pixelVerified)} below). Here the pixel just checks
+              each platform's <b className="text-[#9aa0ad]">own</b> claim — confirming the click-driven people it can
+              see and dropping the impression-only / unmatched ones it never could. The platforms can't see each
+              other, so we never combine them.
             </p>
             <div className="flex flex-col gap-5">
               {perPlatform.map((p) => (
@@ -60,7 +62,7 @@ export function ReconciliationView({ scale = 1 }: ReconciliationViewProps) {
                   <Waterfall
                     start={{ label: `${p.label} claims`, value: p.claimed, color: p.color }}
                     steps={p.reasons.map((r) => ({ label: r.label, delta: r.delta, description: r.description }))}
-                    end={{ label: `Pixel-verified (${p.label})`, value: p.verified }}
+                    end={{ label: 'Pixel-confirmed real', value: p.verified }}
                   />
                 </div>
               ))}
@@ -69,10 +71,10 @@ export function ReconciliationView({ scale = 1 }: ReconciliationViewProps) {
 
           {/* Resolve to one truth — composition, not a sum */}
           <section className="glass rounded-2xl px-5 py-[18px]">
-            <h3 className="mb-1 text-[13px] font-bold">…then resolved to one truth</h3>
+            <h3 className="mb-1 text-[13px] font-bold">…then one pixel-verified truth</h3>
             <p className="mb-3 text-[10.5px] leading-snug text-[#5b626f]">
-              Even the verified numbers can't be added — <b className="text-[#c8b8e8]">{fmt(meta.verified)} + {fmt(google.verified)} would double-count
-              the {fmt(overlap)} people claimed by both.</b> The pixel deduplicates to the unique union:
+              Even the confirmed numbers can't be added — <b className="text-[#c8b8e8]">{fmt(meta.verified)} + {fmt(google.verified)} would double-count
+              the {fmt(overlap)} people in both.</b> The pixel deduplicates to one verified truth:
             </p>
             {/* composition bar of the verified truth */}
             <div className="flex h-[34px] w-full overflow-hidden rounded-[7px] shadow-[inset_0_1px_0_rgba(255,255,255,.1)]">
@@ -94,6 +96,11 @@ export function ReconciliationView({ scale = 1 }: ReconciliationViewProps) {
             </div>
             <div className="mt-3 rounded-xl border border-purple-500/20 bg-purple-500/[0.06] px-3.5 py-3 text-[11px] leading-relaxed text-[#c8b8e8]">
               {narrative.join(' ')}
+            </div>
+            <div className="mt-2 text-[9.5px] leading-snug text-[#5b626f]">
+              Reconciliation answers <b className="text-[#9aa0ad]">how many real people</b> — one truth. Splitting
+              credit for the {fmt(overlap)} shared people between Meta and Google is a different question: the
+              <b className="text-[#9aa0ad]"> attribution model's</b> job (Marketing tab).
             </div>
           </section>
         </div>

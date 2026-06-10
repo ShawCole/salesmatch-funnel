@@ -111,9 +111,9 @@ export function buildReconciliation(scaleFactor = 1): ReconciliationData {
   ];
 
   const narrative = [
-    `We never combine the platforms — each is reconciled on its own against the pixel.`,
-    `Meta claims ${metaClaimed}; the pixel verifies ${metaVerified}. Google claims ${googleClaimed}; verified ${googleVerified}.`,
-    `Even those verified numbers can't be added: ${overlap} people were claimed by BOTH (only the pixel knows it's one human). Dedup → ${uniqueFromAds} unique from ads, plus ${pixelOnly} the platforms missed = ${pixelVerified} verified — the single source of truth.`,
+    `We never combine the platforms — the pixel checks each one's own claim separately.`,
+    `Meta claims ${metaClaimed}; the pixel confirms ${metaVerified} are real. Google claims ${googleClaimed}; confirms ${googleVerified}.`,
+    `Even those confirmed numbers can't be added: ${overlap} people are in both (only the pixel knows it's one human). The one pixel-verified truth is ${pixelVerified} unique people — ${uniqueFromAds} from ads plus ${pixelOnly} the platforms missed.`,
   ];
 
   const methodology = [
