@@ -7,6 +7,7 @@ import {
   type Stage, type PlatformKey, type FunnelMode,
 } from '../data/funnelMock';
 import { ReconciliationView } from './ReconciliationView';
+import { AttributionByModel } from './AttributionByModel';
 
 type ViewMode = FunnelMode | 'reconciliation';
 
@@ -394,6 +395,7 @@ export function FullFunnelView({ onDrillToMap, tenantName, scaleFactor = 1 }: Fu
             </div>
           </aside>
         </div>
+        {mode === 'marketing' && <AttributionByModel modelKey={model} total={get('form')} />}
         </>
         )}
 

@@ -66,18 +66,23 @@ export const MARKETING_BASE: Stage[] = [
 export const TAM = 15596;
 
 // Attribution-model presets (Marketing view only) — re-split conversion credit.
+// Per-model channel credit weights. The journey-position bias is encoded here:
+// social/awareness (Meta, TikTok) peak under first-touch; intent-capture (Google,
+// Email) peak under last-touch; linear/time-decay/data-driven sit between.
 export const ATTRIBUTION_PRESETS: Record<string, Record<PlatformKey, number>> = {
-  last:   { ...z, meta: 41, google: 26, linkedin: 28, dsp: 1, email: 4 },
-  first:  { ...z, meta: 55, google: 30, linkedin: 9,  dsp: 4, email: 2 },
-  linear: { ...z, meta: 46, google: 27, linkedin: 20, dsp: 3, email: 4 },
-  decay:  { ...z, meta: 43, google: 25, linkedin: 26, dsp: 2, email: 4 },
+  first:       { ...z, meta: 55, google: 22, linkedin: 9,  tiktok: 6, dsp: 6, email: 2 },
+  last:        { ...z, meta: 34, google: 38, linkedin: 12, tiktok: 1, dsp: 3, email: 12 },
+  linear:      { ...z, meta: 44, google: 28, linkedin: 14, tiktok: 3, dsp: 4, email: 7 },
+  decay:       { ...z, meta: 38, google: 34, linkedin: 13, tiktok: 2, dsp: 3, email: 10 },
+  data_driven: { ...z, meta: 41, google: 30, linkedin: 16, tiktok: 2, dsp: 5, email: 6 },
 };
 
 export const ATTRIBUTION_MODELS = [
-  { key: 'last',   label: 'Last-touch' },
-  { key: 'first',  label: 'First-touch' },
-  { key: 'linear', label: 'Linear' },
-  { key: 'decay',  label: 'Time-decay' },
+  { key: 'first',       label: 'First-touch' },
+  { key: 'last',        label: 'Last-touch' },
+  { key: 'linear',      label: 'Linear' },
+  { key: 'decay',       label: 'Time-decay' },
+  { key: 'data_driven', label: 'Data-driven' },
 ] as const;
 
 export const PIPELINES = [
