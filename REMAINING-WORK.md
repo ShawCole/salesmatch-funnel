@@ -66,7 +66,7 @@ Key changes from original:
 
 ### 7. .env.local updates
 - Add `VITE_API_URL=http://localhost:8080`
-- Add `VITE_TILES_URL=https://storage.googleapis.com/listmagic-tiles`
+- Add `VITE_TILES_URL=https://storage.googleapis.com/arkdata-tiles`
 - Keep `VITE_MAPBOX_TOKEN`
 
 ### 8. TypeScript cleanup

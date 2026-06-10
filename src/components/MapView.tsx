@@ -7,7 +7,7 @@ import { useFilters } from '../contexts/FilterContext';
 import type { GeoCounty, GeoZip } from '../types/dashboard';
 import { Protocol } from 'pmtiles';
 
-const TILES_BASE = import.meta.env.VITE_TILES_URL || 'https://storage.googleapis.com/listmagic-tiles';
+const TILES_BASE = import.meta.env.VITE_TILES_URL || 'https://storage.googleapis.com/arkdata-tiles';
 
 // National center
 const INITIAL_VIEW = { lng: -98.5, lat: 39.5, zoom: 4 };
