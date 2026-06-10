@@ -10,14 +10,17 @@ interface ReconciliationViewProps {
 
 export function ReconciliationView({ scale = 1 }: ReconciliationViewProps) {
   const data: ReconciliationData = useMemo(() => buildReconciliation(scale), [scale]);
-  const { pixelVerified, platformClaimedTotal, overClaimPct, sources, reasons, narrative, asOf } = data;
+  const {
+    pixelVerified, naiveStackedTotal, uniqueLow, uniqueHigh, overClaimPct,
+    sources, reasons, narrative, methodology, asOf,
+  } = data;
   const pixelOnly = reasons.find((r) => r.tone === 'add')?.delta ?? 0;
 
   const kpis = [
-    { label: 'Platform-claimed', value: fmt(platformClaimedTotal), tint: '#6366f1' },
-    { label: '◆ Pixel-verified', value: fmt(pixelVerified), tint: '#a855f7', hero: true },
-    { label: 'Over-claim', value: `${overClaimPct}%`, tint: '#fb7185' },
-    { label: 'Pixel-only found', value: fmt(pixelOnly), tint: '#10b981' },
+    { label: 'Naive stacked total', value: fmt(naiveStackedTotal), sub: `⚠ overlap unknown · ${uniqueLow}–${uniqueHigh} unique`, tint: '#fbbf24', warn: true },
+    { label: '◆ Pixel-verified', value: fmt(pixelVerified), sub: 'single source of truth', tint: '#a855f7', hero: true },
+    { label: 'Platforms over-claim', value: `${overClaimPct}%`, sub: 'vs the pixel truth', tint: '#fb7185' },
+    { label: 'Pixel-only found', value: fmt(pixelOnly), sub: 'platforms missed these', tint: '#10b981' },
   ];
 
   return (
@@ -26,10 +29,12 @@ export function ReconciliationView({ scale = 1 }: ReconciliationViewProps) {
       <div className="mb-[18px] grid grid-cols-2 gap-2.5 lg:grid-cols-4">
         {kpis.map((k) => (
           <div key={k.label}
-            className={`glass rounded-2xl px-3.5 py-[13px] ${k.hero ? '!border-purple-500/30' : ''}`}
-            style={k.hero ? { background: 'linear-gradient(135deg,rgba(168,85,247,.14),rgba(124,58,237,.05))' } : undefined}>
-            <div className={`mb-[7px] text-[9.5px] font-semibold uppercase tracking-[0.07em] ${k.hero ? 'text-[#c8a8f0]' : 'text-[#9aa0ad]'}`}>{k.label}</div>
+            className={`glass rounded-2xl px-3.5 py-[13px] ${k.hero ? '!border-purple-500/30' : k.warn ? '!border-amber-400/30' : ''}`}
+            style={k.hero ? { background: 'linear-gradient(135deg,rgba(168,85,247,.14),rgba(124,58,237,.05))' }
+              : k.warn ? { background: 'linear-gradient(135deg,rgba(251,191,36,.10),rgba(251,191,36,.02))' } : undefined}>
+            <div className={`mb-[7px] text-[9.5px] font-semibold uppercase tracking-[0.07em] ${k.hero ? 'text-[#c8a8f0]' : k.warn ? 'text-[#e6c878]' : 'text-[#9aa0ad]'}`}>{k.label}</div>
             <div className="text-[19px] font-extrabold tabular-nums tracking-tight">{k.value}</div>
+            <div className="mt-0.5 text-[9.5px] text-[#5b626f]">{k.sub}</div>
           </div>
         ))}
       </div>
@@ -40,16 +45,17 @@ export function ReconciliationView({ scale = 1 }: ReconciliationViewProps) {
           <section className="glass rounded-2xl px-5 py-[18px]">
             <div className="mb-1 flex items-center justify-between">
               <h3 className="text-[13px] font-bold">Why the numbers don't match</h3>
-              <div className="text-[10.5px] text-[#5b626f]">platform-claimed → pixel-verified · {asOf}</div>
+              <div className="text-[10.5px] text-[#5b626f]">naive sum → pixel-verified · {asOf}</div>
             </div>
             <p className="mb-4 text-[10.5px] leading-snug text-[#5b626f]">
-              The pixel is the deterministic, person-level truth. This bridge shows exactly where the
-              platforms' claimed conversions go.
+              You can't add Meta's and Google's claims — they measure in isolation and can't see each
+              other, so the same person gets counted twice and the overlap is invisible to them. Only the
+              person-level pixel deduplicates to one deterministic truth.
             </p>
             <Waterfall
-              start={{ label: 'Meta + Google claim', value: platformClaimedTotal }}
+              start={{ label: 'Naive stacked total (Meta + Google added)', value: naiveStackedTotal, tone: 'warn' }}
               steps={reasons.map((r) => ({ label: r.label, delta: r.delta, description: r.description }))}
-              end={{ label: 'Pixel-verified', value: pixelVerified }}
+              end={{ label: 'Pixel-verified — single source of truth', value: pixelVerified }}
             />
             {/* templated narrative */}
             <div className="mt-4 rounded-xl border border-purple-500/20 bg-purple-500/[0.06] px-3.5 py-3 text-[11px] leading-relaxed text-[#c8b8e8]">
@@ -76,12 +82,13 @@ export function ReconciliationView({ scale = 1 }: ReconciliationViewProps) {
           </section>
         </div>
 
-        {/* RIGHT — source comparison */}
+        {/* RIGHT — source comparison + methodology */}
         <aside className="flex flex-col gap-4">
           <div className="glass rounded-2xl px-[17px] py-4">
             <div className="mb-0.5 text-[12px] font-bold">Every source disagrees</div>
             <p className="mb-3 text-[10px] leading-snug text-[#5b626f]">
-              What each platform reports vs the pixel truth. CRM is downstream (closed-won), shown for context.
+              What each platform reports — shown <b className="text-[#9aa0ad]">separately, never summed</b> (they
+              overlap by an unknown amount). CRM is downstream (closed-won).
             </p>
             <div className="flex flex-col gap-2.5">
               {sources.map((src) => {
@@ -113,9 +120,21 @@ export function ReconciliationView({ scale = 1 }: ReconciliationViewProps) {
               })}
             </div>
             <div className="mt-[11px] rounded-lg border border-amber-400/20 bg-amber-400/[0.08] px-2.5 py-2 text-[10px] leading-snug text-[#fbbf24]">
-              ⚠ If three dashboards show three numbers, none of them is wrong — they're measuring different
-              things. The pixel reconciles them to one deterministic truth.
+              ⚠ Three dashboards, three numbers — none is "wrong," they measure different things. The pixel
+              reconciles them to one deterministic truth.
             </div>
+          </div>
+
+          {/* METHODOLOGY — how we can challenge the platforms */}
+          <div className="glass rounded-2xl px-[17px] py-4">
+            <div className="mb-2 text-[12px] font-bold">How the pixel can challenge them</div>
+            <ul className="flex flex-col gap-2">
+              {methodology.map((m, i) => (
+                <li key={i} className="flex gap-2 text-[10px] leading-snug text-[#9aa0ad]">
+                  <span className="mt-[2px] text-[#a855f7]">◆</span><span>{m}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         </aside>
       </div>

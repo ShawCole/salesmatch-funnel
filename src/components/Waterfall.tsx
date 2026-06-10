@@ -8,7 +8,7 @@ export interface WaterfallStep {
 }
 
 interface WaterfallProps {
-  start: { label: string; value: number };
+  start: { label: string; value: number; tone?: 'warn' };
   steps: WaterfallStep[];
   end: { label: string; value: number };
 }
@@ -41,7 +41,7 @@ export function Waterfall({ start, steps, end }: WaterfallProps) {
   return (
     <div className="flex flex-col gap-2">
       {rows.map((r, i) => {
-        const color = KIND_COLOR[r.kind];
+        const color = r.kind === 'start' && start.tone === 'warn' ? '#fbbf24' : KIND_COLOR[r.kind];
         const widthPct = Math.max(2, (r.running / max) * 100);
         const valueText = r.kind === 'start' || r.kind === 'end'
           ? r.value.toLocaleString()
@@ -51,6 +51,7 @@ export function Waterfall({ start, steps, end }: WaterfallProps) {
           <div key={i} className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
             {/* label */}
             <div className={`w-full sm:w-[200px] sm:flex-shrink-0 text-[12px] ${isTotal ? 'font-bold text-[#e8e8ec]' : 'font-medium text-[#9aa0ad]'}`}>
+              {r.kind === 'start' && start.tone === 'warn' && <span className="mr-1 text-[#fbbf24]">⚠</span>}
               {r.kind === 'sub' && <span className="mr-1 text-[#fb7185]">−</span>}
               {r.kind === 'add' && <span className="mr-1 text-emerald-400">+</span>}
               {r.kind === 'end' && <span className="mr-1 text-[#a855f7]">◆</span>}
