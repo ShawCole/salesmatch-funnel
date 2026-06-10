@@ -8,7 +8,7 @@ export interface WaterfallStep {
 }
 
 interface WaterfallProps {
-  start: { label: string; value: number; tone?: 'warn' };
+  start: { label: string; value: number; tone?: 'warn'; color?: string };
   steps: WaterfallStep[];
   end: { label: string; value: number };
 }
@@ -41,7 +41,9 @@ export function Waterfall({ start, steps, end }: WaterfallProps) {
   return (
     <div className="flex flex-col gap-2">
       {rows.map((r, i) => {
-        const color = r.kind === 'start' && start.tone === 'warn' ? '#fbbf24' : KIND_COLOR[r.kind];
+        const color = r.kind === 'start'
+          ? (start.tone === 'warn' ? '#fbbf24' : start.color ?? KIND_COLOR.start)
+          : KIND_COLOR[r.kind];
         const widthPct = Math.max(2, (r.running / max) * 100);
         const valueText = r.kind === 'start' || r.kind === 'end'
           ? r.value.toLocaleString()
