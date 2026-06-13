@@ -89,6 +89,55 @@ full mobile parity.
 - **P1:** a sankey path view for multi-touch journeys (pairs naturally with attribution models).
 - **P2:** light theme for white-label; partner portal; wire up widget customization.
 
+## Appendix — full feature inventory observed (capabilities, not just UI)
+
+Beyond the layout themes above, these are the recurring *features/capabilities* across the tools.
+✓ = we already have it · ◐ = we have a seed/partial · ✗ = we don't.
+
+**AI / intelligence layer** (biggest current frontier — Triple Whale's Moby leads; Northbeam notably has none)
+- ✗ Conversational AI assistant over your own data ("ask in plain language, get the answer") — Moby Chat
+- ◐ AI recommendations with *actions* ("scale this, cut that, here's why") — Moby Media Buyer (we have the Notices/Suggestions panel as the seed)
+- ✗ Anomaly detection + alerts (conv drop 30%, CPA spike, budget pacing too fast, traffic anomalies)
+- ✗ Forecasting (campaign outcome before budget runs out, churn risk, pipeline velocity, traffic)
+- ✗ AI creative analysis; ✗ AI narrative summaries ("what changed and why")
+
+**Measurement depth** (beyond the attribution models we built)
+- ✗ MMM (marketing-mix modeling) · ✗ Incrementality / holdout / lift testing · ✗ clean-room deterministic views
+- ✗ Cross-device identity graph · ✗ Cohort analysis + LTV by acquisition source + payback period
+- ✗ Profit / MER (net of COGS, shipping, returns, fees — "true profit," not revenue)
+- ◐ Customer-journey / path visualization (= the sankey we flagged) · ✗ subscription/retention analytics
+
+**Performance management**
+- ✗ Goal tracking + budget pacing (targets, progress, pacing alerts) · ✗ Benchmarks (vs industry CTR/CVR)
+- ✗ Chart annotations (mark events/changes to explain deviations) · ◐ top/bottom performer tables
+
+**Data plumbing**
+- ✗ Server-side tracking (Meta CAPI / Google Enhanced Conversions) + event deduplication (event_id)
+- ✓ Cookie-free / first-party pixel · ✗ warehouse-native / SQL editor · ✗ no-code dashboard + segmentation builder
+- ✗ Creative-level attribution (which ad/creative converts)
+
+**Reporting / distribution**
+- ✗ Scheduled reports (CSV/PDF/email cadence) · ◐ alerts → Slack/email with recommended actions
+- ◐ Customizable/savable dashboards & widgets (scaffolded, unused) · ◐ white-label client reporting
+
+**Affiliate / partner-specific** (the partner-network wedge)
+- ✗ Partner portal (self-serve: tracking links, offers, performance, payouts)
+- ✗ Deep linking (to a specific product/page, not the homepage) + cross-device
+- ✗ Coupon / promo-code tracking (incl. offline + "no tracking URL needed")
+- ✗ Partner discovery / marketplace + contracting + automated workflow
+- ◐ Deal models: RevShare / CPA / CPC / CPM / Hybrid / recurring (our hierarchy is the seed)
+- ✗ Automated/managed payouts (PayPal/Stripe/bank, global multi-currency)
+- ✗ Fraud detection (cookie stuffing, fake leads, IP/device fingerprinting, velocity checks, validation)
+
+**Highest-value standouts for *our* positioning:** (1) an AI assistant + anomaly detection growing out of
+our Notices panel; (2) the affiliate stack (fraud, deep links, coupons, payouts) for the partner wedge;
+(3) cheap-but-expected basics: goal tracking, benchmarks, annotations; (4) measurement depth
+(profit/MER, cohort LTV, MMM/incrementality) for the Northbeam-tier "why."
+
+Added sources: [Triple Whale Review — Moby AI (ecommercefastlane)](https://ecommercefastlane.com/triple-whale-review/),
+[AgencyAnalytics — anomaly detection / forecasting / benchmarks](https://agencyanalytics.com/features/anomaly-detection),
+[Trackier — affiliate features & fraud](https://trackier.com/affiliate-tracking-software/).
+
 ## Sources
 - [Dashboard Design Patterns for Modern Web Apps (artofstyleframe)](https://artofstyleframe.com/blog/dashboard-design-patterns-web-apps/) — concrete specs (sidebar dims, KPI card, 12-col grid, table specs, states).
 - [12 Best Marketing Dashboard Examples (Improvado)](https://improvado.io/blog/12-best-marketing-dashboard-examples-and-templates) — marketing/attribution-specific layout + chart conventions.
