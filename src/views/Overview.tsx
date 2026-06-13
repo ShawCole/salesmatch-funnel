@@ -10,8 +10,10 @@ import {
 import { buildSeries } from '../data/seriesMock';
 import {
   PEOPLE_BASE, PLATFORM_ORDER, PLATFORMS, fmt, fmtMoney,
-  FEED_NAMES, FEED_ROLES, FEED_COMPANIES, FEED_CITIES, pickFeedPlatform, rand,
+  FEED_NAMES, FEED_ROLES, FEED_COMPANIES, FEED_CITIES, rand,
 } from '../data/funnelMock';
+import { pickCampaign, type CampaignRow } from '../data/utmMock';
+import { Link2Off } from 'lucide-react';
 
 export function Overview({ onNavigate, onDrill }: { onNavigate: (v: 'people' | 'marketing' | 'reconciliation') => void; onDrill: (id: string) => void }) {
   const { role, drillIds, days, compare } = useDashboard();
@@ -190,13 +192,13 @@ function TenantTable({ scope, onDrill }: { scope: OrgNode; onDrill: (id: string)
 }
 
 /* ---------- notices + live feed ---------- */
-interface FeedItem { id: number; name: string; role: string; company: string; city: string; platform: ReturnType<typeof pickFeedPlatform>; }
+interface FeedItem { id: number; name: string; role: string; company: string; city: string; campaign: CampaignRow; }
 function NoticesAndFeed({ scope }: { scope: OrgNode }) {
   const alerts = alertsFor(scope);
   const [feed, setFeed] = useState<FeedItem[]>([]);
   const idRef = useRef(0);
   useEffect(() => {
-    const mk = (): FeedItem => ({ id: idRef.current++, name: rand(FEED_NAMES), role: rand(FEED_ROLES), company: rand(FEED_COMPANIES), city: rand(FEED_CITIES), platform: pickFeedPlatform() });
+    const mk = (): FeedItem => ({ id: idRef.current++, name: rand(FEED_NAMES), role: rand(FEED_ROLES), company: rand(FEED_COMPANIES), city: rand(FEED_CITIES), campaign: pickCampaign() });
     setFeed(Array.from({ length: 4 }, mk));
     const t = setInterval(() => setFeed((f) => [mk(), ...f].slice(0, 6)), 3200);
     return () => clearInterval(t);
@@ -218,10 +220,13 @@ function NoticesAndFeed({ scope }: { scope: OrgNode }) {
         )}
         <div className="border-t border-border pt-2">
           {feed.map((f, i) => (
-            <div key={f.id} className={`flex items-center gap-2 py-1.5 ${i === 0 ? 'rise' : ''}`}>
-              <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: PLATFORMS[f.platform].color }} />
-              <span className="min-w-0 flex-1 truncate text-[12px]"><b>{f.name}</b> <span className="text-muted-foreground">· {f.role} @ {f.company}</span></span>
-              <span className="flex-shrink-0 text-[10px] text-muted-foreground">{PLATFORMS[f.platform].name}</span>
+            <div key={f.id} className={`py-1.5 ${i === 0 ? 'rise' : ''}`}>
+              <div className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: f.campaign.source.color }} />
+                <span className="min-w-0 flex-1 truncate text-[12px]"><b>{f.name}</b> <span className="text-muted-foreground">· {f.role} @ {f.company}</span></span>
+                {!f.campaign.clickId && <Link2Off size={11} className="flex-shrink-0 text-muted-foreground" />}
+              </div>
+              <div className="ml-3.5 truncate font-mono text-[10px] text-muted-foreground">utm: {f.campaign.source.source}/{f.campaign.source.medium}/{f.campaign.name}</div>
             </div>
           ))}
         </div>

@@ -4,7 +4,9 @@ import { Card, CardHeader, CardBody, Badge } from '../ui/primitives';
 import { useDashboard } from '../state/dashboard';
 import { getNode, ROLE_ROOT, rollup } from '../data/orgMock';
 import { buildReconciliation } from '../data/reconciliationMock';
+import { campaignBreakdown, utmResolvedOnly } from '../data/utmMock';
 import { fmt } from '../data/funnelMock';
+import { Link2Off } from 'lucide-react';
 
 export function Reconciliation() {
   const { role, drillIds } = useDashboard();
@@ -12,6 +14,20 @@ export function Reconciliation() {
   const scope = getNode(scopeId) ?? getNode(ROLE_ROOT.tenant)!;
   const scale = scope.kind === 'tenant' ? (scope.scale ?? 1) : Math.max(0.6, rollup(scope).converted / 420);
   const d = useMemo(() => buildReconciliation(scale), [scale]);
+  // The conversions with NO click-ID = the pixel-only bucket in the truth.
+  // Show how UTM splits those by source (proportions from the campaign mix,
+  // scaled to the pixel-only count so the numbers reconcile with the truth above).
+  const utm = useMemo(() => {
+    const r = utmResolvedOnly(campaignBreakdown(420));
+    const wsum = r.sources.reduce((a, s) => a + s.conversions, 0) || 1;
+    let allocated = 0;
+    const sources = r.sources.map((s, i) => {
+      const v = i === r.sources.length - 1 ? Math.max(0, d.pixelOnly - allocated) : Math.round((s.conversions / wsum) * d.pixelOnly);
+      allocated += v;
+      return { ...s, conversions: v };
+    });
+    return { total: d.pixelOnly, sources };
+  }, [d.pixelOnly]);
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-4">
@@ -84,7 +100,27 @@ export function Reconciliation() {
         </CardBody>
       </Card>
 
-      <Card className="rise" style={{ animationDelay: '260ms' }}>
+      {/* UTM resolution — how click-ID-less conversions get attributed */}
+      <Card className="rise" style={{ animationDelay: '240ms' }}>
+        <CardHeader
+          title={<span className="flex items-center gap-1.5"><Link2Off size={14} style={{ color: 'var(--accent)' }} /> Resolved by UTM, not click-ID</span>}
+          sub="The fallback signal for conversions the platforms never see"
+          right={<span className="tnum text-[20px] font-semibold" style={{ color: 'var(--accent)' }}>{fmt(utm.total)}</span>}
+        />
+        <CardBody>
+          <p className="mb-3 text-[12px] text-muted-foreground">Email, partner/referral and organic carry no gclid/fbclid — so the platforms can't claim them. The pixel attributes them from the <b>utm_*</b> it captured before the redirect. Partner/referral conversions also feed the payout ledger.</p>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            {utm.sources.map((s) => (
+              <div key={s.key} className="rounded-lg border border-border p-2.5">
+                <div className="flex items-center gap-1.5 text-[12px] font-medium"><span className="h-2 w-2 rounded-full" style={{ background: s.source.color }} />{s.source.source} / {s.source.medium}</div>
+                <div className="tnum mt-1 text-[18px] font-semibold">{fmt(s.conversions)}</div>
+              </div>
+            ))}
+          </div>
+        </CardBody>
+      </Card>
+
+      <Card className="rise" style={{ animationDelay: '300ms' }}>
         <CardHeader title="How the pixel resolves this" />
         <CardBody className="space-y-1.5">
           {d.methodology.map((mth, i) => <p key={i} className="text-[12px] leading-relaxed text-muted-foreground">{mth}</p>)}

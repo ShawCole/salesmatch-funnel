@@ -5,7 +5,10 @@ import {
 } from '../state/dashboard';
 import { PLATFORM_ORDER, PLATFORMS } from '../data/funnelMock';
 import { ATTRIBUTION_MODELS } from '../data/funnelMock';
+import { campaignFilterOptions } from '../data/utmMock';
 import type { ViewKey } from './nav';
+
+const campaignOpts = campaignFilterOptions();
 
 const channelOpts: { key: ChannelFilter; label: string }[] = [
   { key: 'all', label: 'All channels' },
@@ -14,8 +17,9 @@ const channelOpts: { key: ChannelFilter; label: string }[] = [
 
 /** Persistent, sticky filter bar — shared across every view. */
 export function FilterBar({ view }: { view: ViewKey }) {
-  const { date, setDate, compare, setCompare, channel, setChannel, model, setModel } = useDashboard();
+  const { date, setDate, compare, setCompare, channel, setChannel, campaignId, setCampaignId, model, setModel } = useDashboard();
   const showModel = view === 'marketing' || view === 'attribution' || view === 'paths';
+  const showCampaign = view === 'marketing' || view === 'attribution' || view === 'campaigns' || view === 'overview';
 
   return (
     <div className="flex flex-wrap items-center gap-2 border-b border-border bg-background/80 px-4 py-2 backdrop-blur">
@@ -26,6 +30,9 @@ export function FilterBar({ view }: { view: ViewKey }) {
       <span className="mx-0.5 h-4 w-px bg-border" />
       <Filter size={14} className="text-muted-foreground" />
       <Select<ChannelFilter> value={channel} onChange={setChannel} options={channelOpts} />
+      {showCampaign && (
+        <Select<string> value={campaignId} onChange={setCampaignId} options={campaignOpts} />
+      )}
       {showModel && (
         <Select<ModelKey> value={model} onChange={(m) => setModel(m)} label="Model" options={ATTRIBUTION_MODELS.map((m) => ({ key: m.key as ModelKey, label: m.label }))} />
       )}

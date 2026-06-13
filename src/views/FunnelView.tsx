@@ -9,6 +9,7 @@ import {
   PEOPLE_BASE, MARKETING_BASE, PLATFORM_ORDER, PLATFORMS, ATTRIBUTION_PRESETS,
   splitAbs, fmt, WHO_GROUPS, type Stage, type PlatformKey, type FunnelMode,
 } from '../data/funnelMock';
+import { campaignBreakdown } from '../data/utmMock';
 
 export function FunnelView({ mode }: { mode: FunnelMode }) {
   const { role, drillIds, channel, model, days, compare } = useDashboard();
@@ -88,6 +89,9 @@ export function FunnelView({ mode }: { mode: FunnelMode }) {
                 ? <WhoBreakdown />
                 : <SourceBreakdown stage={sel} channel={channel} />}
             </div>
+            <div className="border-t border-border pt-3">
+              <TopCampaigns count={sel.count} />
+            </div>
           </CardBody>
         </Card>
       </div>
@@ -123,6 +127,24 @@ function SourceBreakdown({ stage, channel }: { stage: Stage; channel: PlatformKe
           <span className="w-16 text-[12px] text-muted-foreground">{PLATFORMS[p].name}</span>
           <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full" style={{ width: `${(abs[p] / total) * 100}%`, background: PLATFORMS[p].color }} /></div>
           <span className="tnum w-12 text-right text-[12px] font-medium">{fmt(abs[p])}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function TopCampaigns({ count }: { count: number }) {
+  const rows = campaignBreakdown(count).slice(0, 4);
+  const max = Math.max(...rows.map((r) => r.conversions), 1);
+  return (
+    <div className="space-y-2">
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Top campaigns (UTM)</div>
+      {rows.map((r) => (
+        <div key={r.id} className="flex items-center gap-2">
+          <span className="h-2 w-2 flex-shrink-0 rounded-full" style={{ background: r.source.color }} />
+          <span className="min-w-0 flex-1 truncate font-mono text-[10.5px] text-muted-foreground">{r.source.source}/{r.name}</span>
+          <div className="hidden h-1.5 w-12 overflow-hidden rounded-full bg-muted sm:block"><div className="h-full rounded-full" style={{ width: `${(r.conversions / max) * 100}%`, background: r.source.color }} /></div>
+          <span className="tnum w-8 flex-shrink-0 text-right text-[12px] font-medium">{fmt(r.conversions)}</span>
         </div>
       ))}
     </div>

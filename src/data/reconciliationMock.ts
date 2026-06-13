@@ -102,7 +102,7 @@ export function buildReconciliation(scaleFactor = 1): ReconciliationData {
     { key: 'google_only', label: 'Google-driven', value: googleOnly, color: PLATFORMS.google.color,
       description: 'Verified people only Google drove (gclid only).' },
     { key: 'pixel_only', label: 'Pixel-only', value: pixelOnly, color: '#10b981',
-      description: 'Real conversions the pixel caught that no platform claimed.' },
+      description: 'Real conversions no platform claimed — resolved by UTM (captured pre-redirect), not a click-ID.' },
   ];
 
   const otherSources: OtherSource[] = [
@@ -120,6 +120,7 @@ export function buildReconciliation(scaleFactor = 1): ReconciliationData {
     'The pixel captures each visitor plus their ad click IDs (gclid / gbraid for Google, fbclid / _fbc for Meta), tying ad click → site visit → conversion to one real person.',
     'That lets it verify each platform’s click-driven conversions on its own, flag impression-only (view-through) ones it never saw as unverified, and see which people carry BOTH click IDs — the cross-platform overlap neither platform can detect.',
     'Platforms cannot deduplicate each other — only a person-level layer can. CRM (closed-won) is the downstream revenue ground truth.',
+    'Where there is no click-ID (email, partner/referral, organic), the pixel falls back to the utm_* it captured from the pre-redirect URL — so those conversions are still attributed to a source, even though Meta and Google never see them.',
   ];
 
   return { perPlatform, overlap, pixelOnly, uniqueFromAds, pixelVerified, truth,

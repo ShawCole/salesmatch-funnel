@@ -7,6 +7,7 @@ import { ErrorBoundary } from './ui/ErrorBoundary';
 import type { ViewKey } from './shell/nav';
 import { Overview } from './views/Overview';
 import { FunnelView } from './views/FunnelView';
+import { Campaigns } from './views/Campaigns';
 import { Reconciliation } from './views/Reconciliation';
 import { Attribution } from './views/Attribution';
 import { Paths } from './views/Paths';
@@ -24,6 +25,7 @@ function Shelled() {
         {view === 'overview' && <Overview onNavigate={(v) => setView(v)} onDrill={drillTo} />}
         {view === 'people' && <FunnelView mode="people" />}
         {view === 'marketing' && <FunnelView mode="marketing" />}
+        {view === 'campaigns' && <Campaigns />}
         {view === 'paths' && <Paths />}
         {view === 'reconciliation' && <Reconciliation />}
         {view === 'attribution' && <Attribution />}

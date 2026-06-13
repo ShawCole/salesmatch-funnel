@@ -28,6 +28,7 @@ interface DashboardState {
   date: DateKey; setDate: (d: DateKey) => void;
   compare: CompareKey; setCompare: (c: CompareKey) => void;
   channel: ChannelFilter; setChannel: (c: ChannelFilter) => void;
+  campaignId: string; setCampaignId: (c: string) => void;
   model: ModelKey; setModel: (m: ModelKey) => void;
   // persona + drill
   role: Role; setRole: (r: Role) => void;
@@ -44,6 +45,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const [date, setDate] = useState<DateKey>('30d');
   const [compare, setCompare] = useState<CompareKey>('prev');
   const [channel, setChannel] = useState<ChannelFilter>('all');
+  const [campaignId, setCampaignId] = useState<string>('all');
   const [model, setModel] = useState<ModelKey>('last');
   const [role, setRole] = useState<Role>('tenant');
   const [drillIds, setDrillIds] = useState<string[]>([]);
@@ -57,7 +59,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   }, [accent]);
 
   const value: DashboardState = {
-    date, setDate, compare, setCompare, channel, setChannel, model, setModel,
+    date, setDate, compare, setCompare, channel, setChannel, campaignId, setCampaignId, model, setModel,
     role, setRole, drillIds, setDrillIds, accent, setAccent, days,
   };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
