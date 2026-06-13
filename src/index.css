@@ -1,76 +1,134 @@
 @import "tailwindcss";
 
+/* Class-based dark mode (we toggle `.dark` on <html>). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ============================================================
+   ArkData design tokens — shadcn neutral base, HSL channels.
+   Light = default; .dark swaps. Per-tenant accent is a hex var.
+   ============================================================ */
 :root {
+  --background: 0 0% 100%;
+  --foreground: 0 0% 9%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 9%;
+  --muted: 0 0% 96.5%;
+  --muted-foreground: 0 0% 42%;
+  --border: 0 0% 90%;
+  --input: 0 0% 90%;
+  --ring: 0 0% 9%;
+  --elevated: 0 0% 98.5%;     /* subtle raised surface (sidebar/topbar) */
+  --destructive: 0 72% 51%;
+  --success: 152 60% 36%;
+  --radius: 0.625rem;
+
+  /* per-tenant accent (overridable at runtime) */
+  --accent: #7c3aed;
+  --accent-fg: #ffffff;
+
+  /* categorical chart palette (channel-neutral) */
+  --chart-1: 222 75% 56%;
+  --chart-2: 160 62% 42%;
+  --chart-3: 32 90% 55%;
+  --chart-4: 280 65% 62%;
+  --chart-5: 340 72% 56%;
+
+  color-scheme: light;
+}
+
+.dark {
+  --background: 222 31% 6%;       /* deep slate, near-black */
+  --foreground: 210 18% 92%;
+  --card: 222 26% 9%;
+  --card-foreground: 210 18% 92%;
+  --muted: 220 18% 16%;
+  --muted-foreground: 218 11% 60%;
+  --border: 220 18% 16%;
+  --input: 220 18% 18%;
+  --ring: 217 60% 60%;
+  --elevated: 222 28% 8%;
+  --destructive: 0 66% 56%;
+  --success: 152 55% 50%;
+
+  --chart-1: 217 80% 62%;
+  --chart-2: 160 60% 48%;
+  --chart-3: 32 92% 60%;
+  --chart-4: 280 68% 68%;
+  --chart-5: 340 78% 64%;
+
   color-scheme: dark;
 }
 
-* {
-  -webkit-tap-highlight-color: transparent;
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-elevated: hsl(var(--elevated));
+  --color-destructive: hsl(var(--destructive));
+  --color-success: hsl(var(--success));
+  --color-chart-1: hsl(var(--chart-1));
+  --color-chart-2: hsl(var(--chart-2));
+  --color-chart-3: hsl(var(--chart-3));
+  --color-chart-4: hsl(var(--chart-4));
+  --color-chart-5: hsl(var(--chart-5));
+  --radius-base: var(--radius);
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
 }
+
+* { -webkit-tap-highlight-color: transparent; }
+
+html, body { margin: 0; height: 100%; }
 
 body {
-  margin: 0;
-  background: #030712;
-  color: #f3f4f6;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  overflow: hidden;
-  -webkit-user-select: none;
-  user-select: none;
+  overflow: hidden;            /* shell scrolls internally; map needs no body scroll */
   -webkit-touch-callout: none;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-svg, canvas {
-  outline: none !important;
-  -webkit-tap-highlight-color: transparent;
+#root { width: 100vw; min-height: 100vh; }
+
+/* tabular figures for all metric numerals */
+.tnum { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+
+svg, canvas { outline: none !important; -webkit-tap-highlight-color: transparent; }
+.mapboxgl-canvas { outline: none; }
+
+/* staggered mount reveal */
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.rise { animation: rise .45s cubic-bezier(.22,.61,.36,1) both; }
+@keyframes shimmer { 100% { transform: translateX(100%); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .rise { animation: none; }
 }
 
-#root {
-  width: 100vw;
-  min-height: 100vh;
-}
-
-.mapboxgl-canvas {
-  outline: none;
-}
-
+/* ---- legacy classes preserved (map view + demographic cards depend on these) ---- */
 .glass {
   background: rgba(17, 24, 39, 0.80);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
-
 .glass-light {
   background: rgba(17, 24, 39, 0.60);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
-
-/* Mobile grid: override .glass fixed widths, rounding, borders, shadows */
-.mobile-grid .glass {
-  width: 100% !important;
-  height: 100% !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  border: none !important;
-}
-/* Standardize mobile grid row heights */
-.mobile-grid > div {
-  height: 244px !important;
-  min-height: 0 !important;
-}
+.mobile-grid .glass { width: 100% !important; height: 100% !important; border-radius: 0 !important; box-shadow: none !important; border: none !important; }
+.mobile-grid > div { height: 244px !important; min-height: 0 !important; }
 
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-::-webkit-scrollbar {
-  width: 4px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 2px;
-}
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: hsl(var(--muted-foreground) / 0.3); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.5); }
