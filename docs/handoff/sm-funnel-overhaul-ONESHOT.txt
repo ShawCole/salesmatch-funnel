@@ -1,0 +1,153 @@
+================================================================================
+ONE-SHOT BUILD PROMPT — Full-Funnel Attribution UI, ground-up overhaul
+For: Fable 5 (Claude desktop app). Paste this whole file as your first message.
+Companion file: paste "sm-funnel-research-digest.md" right after this one.
+================================================================================
+
+## YOUR MISSION
+
+You are a senior product designer + frontend engineer. Completely rebuild the
+"full-funnel attribution dashboard" currently live at:
+
+    https://sm-funnel.netlify.app   ← open it, study it, then REPLACE it.
+
+Do NOT patch the existing screens. Rebuild from the ground up. The goal: make it
+native to the shipped ArkData product (design language spec below), close the
+known UX gaps (listed below), preserve the locked product semantics (below), and
+raise it to best-in-class — on par with Triple Whale / Northbeam / HockeyStack /
+Everflow. You may fabricate all data. Output complete, drop-in React code.
+
+This is the attribution layer of the larger ArkData platform (app.arkdata.io).
+It is multi-tenant and white-label: ArkData → meta-partners → partners → tenants.
+
+--------------------------------------------------------------------------------
+## STEP 0 — ABSORB (don't re-discover)
+--------------------------------------------------------------------------------
+1. Open https://sm-funnel.netlify.app and walk every view (People/Marketing
+   funnels, the mode toggle, reconciliation, attribution-by-model, the persona
+   switcher + portfolio roll-up, the map). Note what's good and what's weak.
+2. Read the companion "sm-funnel-research-digest.md" I pasted — it is the
+   distilled competitive landscape + UI-pattern research. Treat its gap list and
+   "wedge" as ground truth; don't re-derive them.
+3. Optionally browse competitor marketing/product pages for visual reference:
+   Triple Whale, Northbeam, HockeyStack, Everflow, Rockerbox. Pull layout/IA
+   ideas, not pixels.
+
+--------------------------------------------------------------------------------
+## STEP 1 — MATCH THE ARKDATA DESIGN LANGUAGE (make it look native)
+--------------------------------------------------------------------------------
+The shipped ArkData app is React 18 + Vite + Tailwind + shadcn/ui (Radix) +
+TanStack Query, charts via **recharts**. Match THIS, not the gold marketing
+brand. Exact primitives to mirror:
+
+DESIGN TOKENS (shadcn neutral base, HSL, ship BOTH themes; default = dark):
+  Light:  --background 0 0% 100%;  --foreground 0 0% 3.9%;  --card 0 0% 100%;
+          --muted 0 0% 96.1%;  --muted-foreground 0 0% 45.1%;
+          --border 0 0% 89.8%;  --radius 0.5rem;
+  Dark:   --background 0 0% 3.9%; --foreground 0 0% 98%;  --card 0 0% 3.9%;
+          --muted 0 0% 14.9%;  --muted-foreground 0 0% 63.9%;
+          --border 0 0% 14.9%;  --sidebar-background 240 5.9% 10% (slate).
+  Chart palette (dark): --chart-1 220 70% 50%; -2 160 60% 45%; -3 30 80% 55%;
+          -4 280 65% 60%; -5 340 75% 55%.  Always override recharts colors with
+          these — never library defaults. Semantic: emerald=above goal, rose=below.
+
+PER-TENANT ACCENT: a single accent color (default purple #7c3aed) applied as
+  inline tint — active nav item = backgroundColor `${accent}15` + color `accent`;
+  avatar chip = `${accent}20`. Make accent a prop/CSS var so a tenant can rebrand.
+
+LAYOUT (this is the #1 gap — the current app uses a top toggle, not a sidebar):
+  • Persistent LEFT SIDEBAR: 240px expanded / 68px collapsed (icon + tooltip).
+    Section headers 12px uppercase muted; active item = tinted bg + accent text +
+    accent icon. Tenant switcher at top, user chip at bottom. Collapse toggle.
+  • TopBar: page title + persistent filter bar (see gaps) + dark/light toggle +
+    notifications. MobileNav: sidebar collapses to a drawer; full mobile parity.
+  • Card/elevated surfaces (shadcn Card: CardHeader/CardTitle/CardContent),
+    rounded-lg, subtle border, generous padding. Progressive disclosure > density.
+
+CHART KIT (mirror these component contracts so it ports cleanly):
+  • FunnelChart({ title, stages })  — stages:[{label,value}]; per-stage bar width
+    = value/max, plus stage-to-stage conversion %.
+  • SankeyChart({ title, stages, flows }) — flows:[{from,to,value}]; multi-touch
+    path view. (Current app has NO sankey — add it.)
+  • HeatmapChart({ title, ... }) — channel × week, red↔green vs goal.
+  • KPICard / MetricCard — one big number (28–32px) + ONE comparison (vs prior
+    period) + ONE micro-viz (sparkline). "Never show a naked number."
+  • TrendChart / AdvancedTrendChart — real recharts LINE time-series (current app
+    only has sparklines — add real line charts).
+
+--------------------------------------------------------------------------------
+## STEP 2 — CLOSE THESE GAPS (the whole point of the rebuild)
+--------------------------------------------------------------------------------
+P0:
+  1. Real time-series LINE charts (recharts) for trends — not just sparklines.
+  2. Sparklines INSIDE KPI cards + a comparison period ("vs prior 30d", with
+     +/- delta in emerald/rose).
+  3. A PERSISTENT, STICKY filter bar across every view: date range
+     (MTD/QTD/YTD/custom) + comparison period + channel + campaign + attribution
+     model. Filters survive drill-down.
+  4. SANKEY path view for multi-touch journeys (pairs with attribution models).
+  5. Sidebar nav (replaces the top toggle) — see layout above.
+  6. Loading (skeleton/shimmer), empty (illustration + 1 sentence + CTA), and
+     error (boundary + retry) states for every data surface.
+P1:
+  7. LIGHT theme (white-label partners aren't all dark) — full parity with dark.
+  8. Tighter visual hierarchy, motion (subtle transitions on mount/drill/hover),
+     and AI-NARRATIVE HEADERS: each major view opens with a 1–2 sentence
+     plain-language "what changed and why" summary above the charts.
+
+--------------------------------------------------------------------------------
+## LOCKED SEMANTICS — preserve exactly (do NOT redesign the logic)
+--------------------------------------------------------------------------------
+• TWO funnels with a top-level toggle:
+   – PEOPLE funnel = person-level deterministic, pixel-verified:
+       uploaded → audience → landing-page → converted → booked → closed.
+       Has a Who / Source drill toggle. NO attribution-model selector here.
+   – MARKETING funnel = aggregate: impressions → clicks → visits → leads →
+       conversions → closed. Attribution-model selector lives HERE only.
+• RECONCILIATION = "how many REAL people?" Each platform reconciled on its OWN
+  (e.g. Meta 96→61, Google 58→50), then composed into ONE pixel-verified truth
+  (89 = Meta-only 33 · overlap 28 · Google-only 22 · pixel-only 6).
+  NEVER show a summed/stacked combined number. One truth, shown as composition.
+• ATTRIBUTION = "WHO gets credit?" Total conversions are FIXED; the model
+  (first / last / linear / time-decay / data-driven) only RE-SPLITS credit across
+  channels. Show credit-by-channel bars + a channel×model comparison matrix.
+  Reconciliation and attribution are DIFFERENT surfaces — don't merge them.
+• PERSONA / PORTFOLIO views: role hierarchy admin > meta_partner > partner >
+  tenant. A persona switcher; higher roles see a portfolio roll-up (aggregate
+  KPIs + sparklines + notices) with breadcrumb drill-down into a tenant's funnel.
+
+--------------------------------------------------------------------------------
+## HARD CONSTRAINTS
+--------------------------------------------------------------------------------
+• You MAY fabricate all data (make it realistic + internally consistent; live-
+  ticking mock feeds are great). Never claim it's real.
+• NEVER surface "DataMoon" or any upstream-vendor name anywhere in UI or code.
+  The ONLY provider brand shown is "AudienceLab". (Org-wide rule.)
+• Mobile parity is required (sidebar→drawer, charts reflow, funnel rows stack).
+• Best-in-class bar: clean hierarchy, semantic color, progressive disclosure,
+  motion, AI-narrative headers. Don't cram.
+
+--------------------------------------------------------------------------------
+## OUTPUT FORMAT
+--------------------------------------------------------------------------------
+Produce COMPLETE, drop-in React code for a Vite + React 18 + TypeScript +
+Tailwind app (the target repo is TypeScript). Use:
+  • recharts for all charts (line / bar / sankey-ish / heatmap).
+  • shadcn-style primitives (Card, Button, Select, Tabs, Tooltip, Skeleton) —
+    inline lightweight versions are fine if you don't pull the full library.
+  • Tailwind with the HSL CSS-variable token system above (index.css :root + .dark).
+Organize as real files with clear paths, e.g.:
+  src/index.css                      (tokens, both themes)
+  src/App.tsx                        (sidebar shell + routing + theme/persona state)
+  src/components/layout/{Sidebar,TopBar,MobileNav,FilterBar}.tsx
+  src/components/charts/{TrendChart,FunnelChart,SankeyChart,HeatmapChart,KPICard}.tsx
+  src/components/states/{Skeleton,EmptyState,ErrorBoundary}.tsx
+  src/views/{Overview,PeopleFunnel,MarketingFunnel,Reconciliation,Attribution,Portfolio}.tsx
+  src/data/mock.ts                   (all fabricated data + live-tick helpers)
+Each file in its own clearly-labeled code block. Start with a short build plan
+(file tree + the 3–4 biggest design decisions), then output the code. Make it
+runnable: a developer should be able to drop these into a Vite TS+Tailwind repo
+and `npm run dev`. Prefer self-contained components over heavy external deps.
+
+Begin with the build plan, then the code.
+================================================================================
