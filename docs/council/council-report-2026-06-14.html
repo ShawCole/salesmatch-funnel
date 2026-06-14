@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Council Verdict — ArkData vs Viktor</title>
+<style>
+  :root{--bg:#0b0e14;--card:#121722;--bd:#222b3a;--fg:#e6e9ef;--mut:#93a0b4;--ac:#7c3aed;--ok:#10b981;--no:#ef4444;--warn:#f59e0b}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px;margin:0 auto;padding:32px 20px 80px}
+  h1{font-size:24px;letter-spacing:-.02em;margin:0 0 4px}
+  .sub{color:var(--mut);font-size:13px;margin:0 0 24px}
+  .q{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:16px 18px;margin-bottom:24px;font-size:14px}
+  .q b{color:var(--ac)}
+  h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);margin:28px 0 10px;font-weight:700}
+  .card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:16px 18px;margin-bottom:12px}
+  .rec{border-color:var(--ac);box-shadow:0 0 0 1px rgba(124,58,237,.25)}
+  .rec h3{margin:0 0 8px;font-size:17px}
+  .first{background:linear-gradient(180deg,rgba(124,58,237,.14),transparent);border-color:var(--ac)}
+  .first .label{color:var(--ac);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+  ul{margin:6px 0 0;padding-left:18px}li{margin:4px 0}
+  table{width:100%;border-collapse:collapse;margin-top:6px;font-size:13px}
+  th,td{padding:8px 6px;text-align:center;border-bottom:1px solid var(--bd)}
+  th:first-child,td:first-child{text-align:left;color:var(--mut)}
+  th{color:var(--mut);font-weight:600;font-size:12px}
+  .y{color:var(--ok);font-weight:700}.n{color:var(--no);font-weight:700}.c{color:var(--warn);font-weight:700}
+  details{background:var(--card);border:1px solid var(--bd);border-radius:10px;margin:8px 0;padding:0 16px}
+  summary{cursor:pointer;padding:12px 0;font-weight:600;font-size:14px;list-style:none;display:flex;justify-content:space-between;align-items:center}
+  summary::-webkit-details-marker{display:none}
+  summary::after{content:"+";color:var(--mut)}details[open] summary::after{content:"–"}
+  details p{margin:0 0 14px;color:#cdd4e0;font-size:13.5px}
+  .adv{font-size:11px;color:var(--mut)}
+  .legend{font-size:12px;color:var(--mut);margin-top:8px}
+  .foot{color:var(--mut);font-size:12px;margin-top:32px;border-top:1px solid var(--bd);padding-top:14px}
+  .pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px}
+  .pill.no{background:rgba(239,68,68,.15);color:#fca5a5}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Council Verdict — How ArkData should compete with Viktor</h1>
+  <p class="sub">5 independent advisors · anonymized peer review · chairman synthesis · 2026-06-14</p>
+
+  <div class="q"><b>Question:</b> ArkData (pixel-verified person-level attribution; partner-payouts wedge; mock-data, real-data wiring <b>blocked</b>) vs <b>Viktor</b> ($75M Accel-funded AI coworker running Meta/Google ads from Slack, shallow attribution, ~$15M ARR/12k teams). Options: <b>A</b> conversational Slack agent · <b>B</b> integrate as the measurement layer · <b>C</b> double down on measurement + payouts wedge · <b>D</b> become an action layer. What to pursue, sequence, and avoid?</div>
+
+  <div class="card rec">
+    <h3>⚖️ Recommendation</h3>
+    <p style="margin:0 0 8px">Pursue <b>C as the business</b>, framed through the <b>referee / source-of-truth</b> lens (you adjudicate money that moves on verified conversions — agencies &amp; partner networks, not SMBs). Use <b>B</b> as <i>positioning</i> ("the verified truth action layers are graded against") built as an <b>independent standard</b>, not dependent on Viktor's goodwill. Keep <b>A</b> as a thin verified-alert surface only. <span class="pill no">Do NOT do D</span></p>
+    <p style="margin:0;color:var(--mut);font-size:13px">Gated on two unproven assumptions: a buyer in real pain exists, and the pixel delivers <i>defensible</i> verified truth on real data. So the next work is <b>proof</b>, not features.</p>
+  </div>
+
+  <div class="card first">
+    <div class="label">▶ The one thing to do first</div>
+    <p style="margin:6px 0 0;font-size:15px">Land <b>one real design partner</b> — an agency or partner-network that already pays partners and disputes attribution — wire their <b>real Meta data + DB</b>, and show <b>one real "over-attribution → verified-payout" delta in dollars</b>. That single proof validates the buyer, the pixel's credibility, and the wedge at once. Everything else waits behind it.</p>
+  </div>
+
+  <h2>Advisor positions</h2>
+  <div class="card" style="padding-top:10px">
+    <table>
+      <thead><tr><th>Advisor</th><th>A · Slack agent</th><th>B · be the layer</th><th>C · wedge</th><th>D · action layer</th></tr></thead>
+      <tbody>
+        <tr><td>Contrarian</td><td class="n">✗ primary</td><td class="n">✗ copyable</td><td class="y">✓ narrowed</td><td class="n">✗</td></tr>
+        <tr><td>First Principles</td><td class="c">~ interface</td><td class="y">✓ moat</td><td class="y">✓</td><td class="n">✗</td></tr>
+        <tr><td>Expansionist</td><td class="y">✓ oracle</td><td class="y">✓</td><td class="y">✓</td><td class="n">✗</td></tr>
+        <tr><td>Outsider</td><td class="n">✗</td><td class="y">✓ GTM</td><td class="y">✓ base</td><td class="n">✗</td></tr>
+        <tr><td>Executor</td><td class="c">~ thin slice</td><td class="n">✗ blocked</td><td class="y">✓</td><td class="n">✗</td></tr>
+      </tbody>
+    </table>
+    <div class="legend"><span class="y">✓</span> pursue &nbsp; <span class="c">~</span> conditional &nbsp; <span class="n">✗</span> avoid &nbsp;—&nbsp; Unanimous: <b>C yes, D no.</b> Peer review's strongest answer: <b>First Principles (referee framing)</b>.</div>
+  </div>
+
+  <h2>Where the council agrees</h2>
+  <div class="card"><ul>
+    <li><b>Never become an action layer (D)</b> — unwinnable vs Viktor's 140 actions/3,200 integrations, and it destroys neutrality (a referee who plays can't be trusted).</li>
+    <li><b>The partner-payouts wedge (C) is the business</b>, not a feature — verified conversions where money changes hands (agencies/networks, not SMBs).</li>
+    <li><b>Reframe the category</b> — you're the referee/scorekeeper, not a faster horse. Distribution is Viktor's game; adjudication is yours.</li>
+    <li><b>Data is the binding constraint, not strategy</b> — mock data is the real competitor. "Until one tenant sees one real conversion, you're a demo."</li>
+    <li><b>Fix the pitch</b> — lead with money ("get paid for conversions that are actually real, not the ones Meta inflated"), not jargon.</li>
+  </ul></div>
+
+  <h2>Where the council clashes</h2>
+  <div class="card"><ul>
+    <li><b>Option A:</b> Expansionist wants it shipped fast as a "trust oracle"; Outsider/Contrarian/Executor say no (Viktor's turf, vaporware on mock data). <b>Resolution:</b> A only as a thin verified-number alert, never a conversational clone.</li>
+    <li><b>Option B:</b> framed as leverage vs. a copyable feature. <b>Peer review broke the tie:</b> Viktor won't voluntarily integrate the layer that grades it 40% fiction — so B works only as an <i>independent standard buyers demand</i>, not "feed Viktor and hope."</li>
+  </ul></div>
+
+  <h2>Blind spots the peer review caught</h2>
+  <div class="card"><ul>
+    <li><b>No customer evidence</b> — does a design partner with a live attribution/payout dispute exist <i>now</i>? Validate before building.</li>
+    <li><b>Verification credibility is unproven</b> — post-iOS14 / cookie-deprecation / server-side CAPI, is the pixel genuinely more truthful, or a different bias? The whole "right to be believed" rests on this being provable.</li>
+    <li><b>Viktor's clock</b> — $75M can bolt on or acquire "good-enough verified" before ArkData unblocks data.</li>
+  </ul></div>
+
+  <h2>Full advisor responses</h2>
+  <details><summary>The Contrarian <span class="adv">— don't fight on distribution; truth isn't a purchase</span></summary>
+    <p>Viktor is at $15M ARR in 10 weeks; ArkData has mock data and no real Meta token wired. This isn't a fair fight on distribution — don't pick the fight that requires winning on it. Fatal flaw: the brief treats "measurement truth" as a moat, but nobody buys truth — they buy money. Viktor's shallow attribution wins because it's attached to an action that moves spend TODAY. Reconciliation tells an agency they over-paid last quarter — an accusation, not a purchase. Verified payouts only matter if a partner network already exists and fights about money — have you talked to five such customers? NOT D (suicide). NOT A as primary (Viktor's UX without Viktor's distribution, on mock data = vaporware). B makes you a feature a $75M company copies in a sprint. So C, ruthlessly narrowed: pick ONE partner-network vertical that already pays partners and disputes attribution; wire real data for THEM first. Mock data is your real competitor, not Viktor.</p></details>
+  <details><summary>The First Principles Thinker <span class="adv">— you're the referee, not a racer ★ strongest</span></summary>
+    <p>Stop — they're not in the same race. Viktor sells distribution/convenience (commoditizes when Meta ships the buttons natively). ArkData sells "the right to be believed" — an adjudication function. When real money moves (payouts, agency billing, over-attribution disputes), someone must be the source of truth both sides accept. The real question isn't "how do I compete with Viktor" — it's "who needs a referee, and will they pay?" Agencies/partner networks settling money; not SMBs. C is the business (a system of record, not a dashboard). B is the moat dressed as humility — be the truth Viktor's actions are graded against; action layers NEED an independent referee. NOT D — becoming an action layer destroys neutrality. A only as an interface to truth you own. You're not the faster horse — you're the scorekeeper. Don't enter the race.</p></details>
+  <details><summary>The Expansionist <span class="adv">— verified truth compounds; own the clearing house</span></summary>
+    <p>Don't frame this as "compete." Viktor spent $75M proving 12,000 teams will wire ad spend into a Slack agent — then handed them attribution so shallow it exports to Sheets. That's a top-of-funnel machine generating buyers about to discover their action layer optimizes against fiction. Verified truth compounds; actions race to zero margin. Lean into B AND C: be the "verified-by-ArkData" substrate every action agent must cite — like Stripe Radar/Plaid underneath everyone. Partner-payouts is a category Viktor structurally can't enter — a wedge into the $14B+ affiliate economy where verified conversions ARE the product. Ship "Ask ArkData" fast as the trust oracle: "Viktor wants to 3x this budget; ArkData says 40% is double-counted" — the second opinion every buyer screenshots. NOT D.</p></details>
+  <details><summary>The Outsider <span class="adv">— fix the pitch; sell the money sentence</span></summary>
+    <p>Cold pitches: Viktor — "I'll run your ads from Slack" (four words). ArkData — "pixel-verified person-level deterministic attribution with reconciliation to one truth via the measurement trifecta" (needed a dictionary). That's the real problem. A media buyer wants to spend less and make more today, not "truth." Viktor does a thing; ArkData explains a concept. Do NOT build "Ask ArkData" — Viktor's home turf, a chatbot returning paragraphs; you'd lose and blur your difference. Do NOT chase D. Do C as foundation, B as go-to-market. The payouts wedge is the only thing a normal person instantly values: "you get paid for conversions that are actually real, not the ones Meta inflated." Then B: "Viktor pulls the levers, ArkData tells it which levers are real." But first — rewrite the pitch to one plain sentence a tired ad buyer nods at.</p></details>
+  <details><summary>The Executor <span class="adv">— data is blocked; here's Monday</span></summary>
+    <p>Pursue C, with a thin slice of A — only what's buildable Monday without real data. Real-data wiring is BLOCKED, which kills B and D outright (B needs a live verified feed; D needs writing to ad accounts you can't even read yet). What you CAN do Monday: (1) Harden the wedge — payout ledger tied to verified conversions; UI/logic problem, runs fine on mock. (2) Unblock the Meta token + DB — highest leverage; until one tenant sees one real conversion, you're a demo. (3) Upgrade the "Route to Slack" stub into one anomaly alert that fires with a verified number. Do NOT chase integration count, build a conversational agent, or write to ad accounts. Monday: token first, payout ledger second, one real Slack alert third.</p></details>
+
+  <details><summary>Peer-review highlights</summary>
+    <p><b>Unanimous:</b> First Principles (referee/adjudication) is the strongest answer — only one with a single coherent principle across all four options.<br><br>
+    <b>Biggest blind spot (4/5):</b> the Expansionist's "be the substrate everyone cites / ship Ask ArkData fast" ignores that real data is blocked — a substrate vision with no substrate.<br><br>
+    <b>What all five missed:</b> zero customer evidence (does the paying referee-buyer exist now?); Viktor's clock (could acquire/bolt on "good-enough verified" first); and whether ArkData's pixel can <i>actually prove</i> person-level truth post-iOS14/cookie-deprecation/CAPI — or is just a different bias. Also: Viktor won't integrate the layer that grades it as fiction.</p></details>
+
+  <div class="foot">Methodology: Karpathy's LLM Council — 5 advisors, anonymized peer review, chairman synthesis. Counciled: ArkData competitive strategy vs Viktor · 2026-06-14. Full transcript: <code>council-transcript-2026-06-14.md</code></div>
+</div>
+</body>
+</html>
