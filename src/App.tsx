@@ -13,6 +13,7 @@ import { Reconciliation } from './views/Reconciliation';
 import { Attribution } from './views/Attribution';
 import { Payouts } from './views/Payouts';
 import { Settings } from './views/Settings';
+import { Reports } from './views/Reports';
 import { Paths } from './views/Paths';
 import { MapView } from './components/MapView';
 
@@ -34,6 +35,7 @@ function Shelled() {
         {view === 'reconciliation' && <Reconciliation />}
         {view === 'attribution' && <Attribution />}
         {view === 'payouts' && <Payouts />}
+        {view === 'reports' && <Reports />}
         {view === 'settings' && <Settings />}
         {view === 'map' && (
           <div className="relative h-full w-full">

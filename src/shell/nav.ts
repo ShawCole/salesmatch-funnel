@@ -1,9 +1,9 @@
 import {
-  LayoutDashboard, Users, Megaphone, GitCompareArrows, Scale, Share2, Map, Target, HandCoins, Sparkles, Settings as SettingsIcon,
+  LayoutDashboard, Users, Megaphone, GitCompareArrows, Scale, Share2, Map, Target, HandCoins, Sparkles, Settings as SettingsIcon, Table2,
   type LucideIcon,
 } from 'lucide-react';
 
-export type ViewKey = 'overview' | 'insights' | 'people' | 'marketing' | 'campaigns' | 'paths' | 'reconciliation' | 'attribution' | 'payouts' | 'map' | 'settings';
+export type ViewKey = 'overview' | 'insights' | 'people' | 'marketing' | 'campaigns' | 'paths' | 'reconciliation' | 'attribution' | 'payouts' | 'reports' | 'map' | 'settings';
 
 export interface NavItem { key: ViewKey; label: string; icon: LucideIcon; }
 export interface NavSection { title?: string; items: NavItem[]; }
@@ -31,7 +31,10 @@ export const NAV: NavSection[] = [
   },
   { title: 'Partners', items: [{ key: 'payouts', label: 'Partners & Payouts', icon: HandCoins }] },
   { title: 'Audience', items: [{ key: 'map', label: 'Geo & Demographics', icon: Map }] },
-  { title: 'Workspace', items: [{ key: 'settings', label: 'Settings', icon: SettingsIcon }] },
+  { title: 'Workspace', items: [
+    { key: 'reports', label: 'Reports', icon: Table2 },
+    { key: 'settings', label: 'Settings', icon: SettingsIcon },
+  ] },
 ];
 
 export const VIEW_TITLE: Record<ViewKey, string> = {
@@ -44,6 +47,7 @@ export const VIEW_TITLE: Record<ViewKey, string> = {
   reconciliation: 'Reconciliation',
   attribution: 'Attribution by Model',
   payouts: 'Partners & Payouts',
+  reports: 'Reports',
   map: 'Geo & Demographics',
   settings: 'Settings',
 };
@@ -58,6 +62,7 @@ export const VIEW_SUBTITLE: Record<ViewKey, string> = {
   reconciliation: 'How many real people? One pixel-verified truth',
   attribution: 'Who gets credit? Total fixed, credit re-split',
   payouts: 'Commissions paid on pixel-verified conversions',
+  reports: 'Sortable detail across channels, campaigns and clients',
   map: 'Where your audience lives and who they are',
   settings: 'Integrations, white-label, team and alerts',
 };
