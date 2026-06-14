@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Sparkles, ArrowRight } from 'lucide-react';
+import { Sparkles, ArrowRight, SlidersHorizontal, Check } from 'lucide-react';
 import { Card, CardHeader, CardBody, Delta, Badge } from '../ui/primitives';
 import { KpiCard } from '../ui/KpiCard';
 import { TrendChart, MiniSpark } from '../ui/charts';
@@ -52,20 +52,23 @@ export function Overview({ onNavigate, onDrill }: { onNavigate: (v: 'people' | '
     ? `Across ${tenants.length} ${CHILD_KIND_LABEL[scope.kind].toLowerCase()}, conversions are ${series.conv.deltaPct >= 0 ? 'up' : 'down'} ${Math.abs(series.conv.deltaPct)}% vs. the prior ${days} days. ${best?.name} is pacing fastest (${best?.trendPct! >= 0 ? '+' : ''}${best?.trendPct}% WoW); ${worst?.name} slipped ${Math.abs(worst?.trendPct ?? 0)}% — worth a creative review.`
     : `Conversions are ${series.conv.deltaPct >= 0 ? 'up' : 'down'} ${Math.abs(series.conv.deltaPct)}% vs. the prior ${days} days, with ${topChannel.name} driving the largest share. ${Math.round(m.converted * 0.86)} of ${m.converted} are pixel-verified — the rest is over-attribution to reconcile.`;
 
+  const [widgets, toggleWidget] = useWidgetPrefs();
+
   return (
     <div className="mx-auto max-w-[1400px] space-y-4">
-      {/* AI narrative header */}
+      {/* AI narrative header + customize */}
       <div className="rise flex items-start gap-3 rounded-[var(--radius)] border border-border bg-card px-4 py-3" style={{ animationDelay: '0ms' }}>
         <div className="mt-0.5 grid h-7 w-7 flex-shrink-0 place-items-center rounded-lg" style={{ background: 'color-mix(in srgb, var(--accent) 16%, transparent)', color: accentColor }}>
           <Sparkles size={15} />
         </div>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="mb-0.5 flex items-center gap-2">
             <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: accentColor }}>AI summary</span>
             <Badge tone="accent">beta</Badge>
           </div>
           <p className="text-[13px] leading-relaxed text-foreground/90">{narrative}</p>
         </div>
+        <CustomizeMenu widgets={widgets} onToggle={toggleWidget} />
       </div>
 
       {/* KPI strip */}
@@ -78,41 +81,90 @@ export function Overview({ onNavigate, onDrill }: { onNavigate: (v: 'people' | '
       </div>
 
       {/* main grid */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        {/* trend */}
-        <Card className="rise lg:col-span-2" style={{ animationDelay: '220ms' }} accentTop>
-          <CardHeader
-            title="Conversions over time"
-            sub={`Daily, last ${days} days${showCompare ? ' · dashed = prior period' : ''}`}
-            right={<Delta pct={series.conv.deltaPct} />}
-          />
-          <CardBody><TrendChart points={series.conv.points} showCompare={showCompare} height={260} /></CardBody>
-        </Card>
-
-        {/* channels */}
-        <Card className="rise" style={{ animationDelay: '260ms' }}>
-          <CardHeader title="Channel contribution" sub="Share of conversions" />
-          <CardBody><ChannelBars total={m.converted} /></CardBody>
-        </Card>
-      </div>
+      {(widgets.trend || widgets.channels) && (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          {widgets.trend && (
+            <Card className={`rise ${widgets.channels ? 'lg:col-span-2' : 'lg:col-span-3'}`} style={{ animationDelay: '220ms' }} accentTop>
+              <CardHeader
+                title="Conversions over time"
+                sub={`Daily, last ${days} days${showCompare ? ' · dashed = prior period' : ''}`}
+                right={<Delta pct={series.conv.deltaPct} />}
+              />
+              <CardBody><TrendChart points={series.conv.points} showCompare={showCompare} height={260} /></CardBody>
+            </Card>
+          )}
+          {widgets.channels && (
+            <Card className={`rise ${widgets.trend ? '' : 'lg:col-span-3'}`} style={{ animationDelay: '260ms' }}>
+              <CardHeader title="Channel contribution" sub="Share of conversions" />
+              <CardBody><ChannelBars total={m.converted} /></CardBody>
+            </Card>
+          )}
+        </div>
+      )}
 
       {/* secondary grid */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        {isPortfolio ? (
-          <TenantTable scope={scope} onDrill={onDrill} />
-        ) : (
-          <Card className="rise lg:col-span-2" style={{ animationDelay: '300ms' }}>
-            <CardHeader
-              title="People funnel snapshot"
-              sub="Person-level, pixel-verified"
-              right={<button onClick={() => onNavigate('people')} className="inline-flex items-center gap-1 text-[12px] font-medium text-muted-foreground hover:text-foreground">Open <ArrowRight size={13} /></button>}
-            />
-            <CardBody><FunnelMini scale={scope.scale ?? 1} /></CardBody>
-          </Card>
-        )}
+      {(widgets.breakdown || widgets.activity) && (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          {widgets.breakdown && (isPortfolio ? (
+            <TenantTable scope={scope} onDrill={onDrill} />
+          ) : (
+            <Card className="rise lg:col-span-2" style={{ animationDelay: '300ms' }}>
+              <CardHeader
+                title="People funnel snapshot"
+                sub="Person-level, pixel-verified"
+                right={<button onClick={() => onNavigate('people')} className="inline-flex items-center gap-1 text-[12px] font-medium text-muted-foreground hover:text-foreground">Open <ArrowRight size={13} /></button>}
+              />
+              <CardBody><FunnelMini scale={scope.scale ?? 1} /></CardBody>
+            </Card>
+          ))}
 
-        <NoticesAndFeed scope={scope} />
-      </div>
+          {widgets.activity && <NoticesAndFeed scope={scope} />}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ---------- customizable widgets ---------- */
+type WidgetKey = 'trend' | 'channels' | 'breakdown' | 'activity';
+const WIDGET_LABELS: { key: WidgetKey; label: string }[] = [
+  { key: 'trend', label: 'Conversions trend' },
+  { key: 'channels', label: 'Channel contribution' },
+  { key: 'breakdown', label: 'Funnel / tenants' },
+  { key: 'activity', label: 'Live activity' },
+];
+const WIDGET_KEY = 'sm-overview-widgets';
+function useWidgetPrefs(): [Record<WidgetKey, boolean>, (k: WidgetKey) => void] {
+  const [w, setW] = useState<Record<WidgetKey, boolean>>(() => {
+    const def = { trend: true, channels: true, breakdown: true, activity: true };
+    try { const s = localStorage.getItem(WIDGET_KEY); return s ? { ...def, ...JSON.parse(s) } : def; } catch { return def; }
+  });
+  const toggle = (k: WidgetKey) => setW((prev) => { const next = { ...prev, [k]: !prev[k] }; try { localStorage.setItem(WIDGET_KEY, JSON.stringify(next)); } catch { /* ignore */ } return next; });
+  return [w, toggle];
+}
+function CustomizeMenu({ widgets, onToggle }: { widgets: Record<WidgetKey, boolean>; onToggle: (k: WidgetKey) => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative flex-shrink-0">
+      <button onClick={() => setOpen((o) => !o)} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-[12px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground">
+        <SlidersHorizontal size={13} /> Customize
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-full z-50 mt-1 w-52 rounded-lg border border-border bg-card p-1.5 shadow-lg">
+            <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Widgets</div>
+            {WIDGET_LABELS.map((w) => (
+              <button key={w.key} onClick={() => onToggle(w.key)} className="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-[12px] hover:bg-muted">
+                {w.label}
+                <span className="grid h-4 w-4 place-items-center rounded border" style={{ background: widgets[w.key] ? 'var(--accent)' : 'transparent', borderColor: widgets[w.key] ? 'var(--accent)' : 'hsl(var(--border))' }}>
+                  {widgets[w.key] && <Check size={11} className="text-white" />}
+                </span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

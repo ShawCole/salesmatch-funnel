@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Download, Search } from 'lucide-react';
+import { Download, Search, CalendarClock, Check } from 'lucide-react';
 import { Card, CardHeader, CardBody, Segmented, Badge } from '../ui/primitives';
 import { DataTable, type Column } from '../ui/DataTable';
 import { useDashboard } from '../state/dashboard';
@@ -81,6 +81,7 @@ export function Reports() {
                 <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search…" className="w-28 bg-transparent text-[12px] outline-none" />
               </div>
               <button onClick={exportCsv} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-[12px] font-medium hover:bg-muted"><Download size={13} /> CSV</button>
+              <ScheduleButton />
             </div>
           }
         />
@@ -91,6 +92,35 @@ export function Reports() {
           <DataTable columns={columns} rows={filtered} initialSort="conv" getKey={(r) => r.id} />
         </CardBody>
       </Card>
+    </div>
+  );
+}
+
+function ScheduleButton() {
+  const [open, setOpen] = useState(false);
+  const [freq, setFreq] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
+  const [fmtKind, setFmtKind] = useState<'pdf' | 'csv'>('pdf');
+  const [saved, setSaved] = useState(false);
+  return (
+    <div className="relative">
+      <button onClick={() => { setOpen((o) => !o); setSaved(false); }} className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-semibold text-white" style={{ background: 'var(--accent)' }}><CalendarClock size={13} /> Schedule</button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-full z-50 mt-1 w-64 rounded-lg border border-border bg-card p-3 shadow-lg">
+            <div className="mb-2 text-[12px] font-semibold">Schedule this report</div>
+            <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Frequency</div>
+            <div className="mb-3"><Segmented value={freq} onChange={setFreq} size="sm" options={[{ key: 'daily', label: 'Daily' }, { key: 'weekly', label: 'Weekly' }, { key: 'monthly', label: 'Monthly' }]} /></div>
+            <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Format</div>
+            <div className="mb-3"><Segmented value={fmtKind} onChange={setFmtKind} size="sm" options={[{ key: 'pdf', label: 'PDF (branded)' }, { key: 'csv', label: 'CSV' }]} /></div>
+            <input placeholder="recipients (comma-sep)" className="mb-2 w-full rounded-md border border-border bg-transparent px-2 py-1.5 text-[12px] outline-none" defaultValue="client@salesmatch.io" />
+            <p className="mb-2 text-[10.5px] text-muted-foreground">{fmtKind === 'pdf' ? 'White-label PDF — your accent + logo, no ArkData branding.' : 'Raw CSV export.'}</p>
+            <button onClick={() => { setSaved(true); setTimeout(() => setOpen(false), 900); }} className="w-full rounded-md py-1.5 text-[12px] font-semibold text-white" style={{ background: 'var(--accent)' }}>
+              {saved ? <span className="inline-flex items-center gap-1"><Check size={13} /> Scheduled</span> : `Schedule ${freq} delivery`}
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
