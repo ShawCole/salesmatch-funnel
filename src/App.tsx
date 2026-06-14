@@ -10,6 +10,7 @@ import { FunnelView } from './views/FunnelView';
 import { Campaigns } from './views/Campaigns';
 import { Reconciliation } from './views/Reconciliation';
 import { Attribution } from './views/Attribution';
+import { Payouts } from './views/Payouts';
 import { Paths } from './views/Paths';
 import { MapView } from './components/MapView';
 
@@ -29,6 +30,7 @@ function Shelled() {
         {view === 'paths' && <Paths />}
         {view === 'reconciliation' && <Reconciliation />}
         {view === 'attribution' && <Attribution />}
+        {view === 'payouts' && <Payouts />}
         {view === 'map' && (
           <div className="relative h-full w-full">
             <FilterProvider>

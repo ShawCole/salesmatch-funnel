@@ -1,9 +1,9 @@
 import {
-  LayoutDashboard, Users, Megaphone, GitCompareArrows, Scale, Share2, Map, Target,
+  LayoutDashboard, Users, Megaphone, GitCompareArrows, Scale, Share2, Map, Target, HandCoins,
   type LucideIcon,
 } from 'lucide-react';
 
-export type ViewKey = 'overview' | 'people' | 'marketing' | 'campaigns' | 'paths' | 'reconciliation' | 'attribution' | 'map';
+export type ViewKey = 'overview' | 'people' | 'marketing' | 'campaigns' | 'paths' | 'reconciliation' | 'attribution' | 'payouts' | 'map';
 
 export interface NavItem { key: ViewKey; label: string; icon: LucideIcon; }
 export interface NavSection { title?: string; items: NavItem[]; }
@@ -26,6 +26,7 @@ export const NAV: NavSection[] = [
       { key: 'attribution', label: 'Attribution', icon: Scale },
     ],
   },
+  { title: 'Partners', items: [{ key: 'payouts', label: 'Partners & Payouts', icon: HandCoins }] },
   { title: 'Audience', items: [{ key: 'map', label: 'Geo & Demographics', icon: Map }] },
 ];
 
@@ -37,6 +38,7 @@ export const VIEW_TITLE: Record<ViewKey, string> = {
   paths: 'Conversion Paths',
   reconciliation: 'Reconciliation',
   attribution: 'Attribution by Model',
+  payouts: 'Partners & Payouts',
   map: 'Geo & Demographics',
 };
 
@@ -48,5 +50,6 @@ export const VIEW_SUBTITLE: Record<ViewKey, string> = {
   paths: 'Multi-touch journeys across channels',
   reconciliation: 'How many real people? One pixel-verified truth',
   attribution: 'Who gets credit? Total fixed, credit re-split',
+  payouts: 'Commissions paid on pixel-verified conversions',
   map: 'Where your audience lives and who they are',
 };
