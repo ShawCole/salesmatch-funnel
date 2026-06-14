@@ -1,15 +1,18 @@
 import {
-  LayoutDashboard, Users, Megaphone, GitCompareArrows, Scale, Share2, Map, Target, HandCoins,
+  LayoutDashboard, Users, Megaphone, GitCompareArrows, Scale, Share2, Map, Target, HandCoins, Sparkles,
   type LucideIcon,
 } from 'lucide-react';
 
-export type ViewKey = 'overview' | 'people' | 'marketing' | 'campaigns' | 'paths' | 'reconciliation' | 'attribution' | 'payouts' | 'map';
+export type ViewKey = 'overview' | 'insights' | 'people' | 'marketing' | 'campaigns' | 'paths' | 'reconciliation' | 'attribution' | 'payouts' | 'map';
 
 export interface NavItem { key: ViewKey; label: string; icon: LucideIcon; }
 export interface NavSection { title?: string; items: NavItem[]; }
 
 export const NAV: NavSection[] = [
-  { items: [{ key: 'overview', label: 'Overview', icon: LayoutDashboard }] },
+  { items: [
+    { key: 'overview', label: 'Overview', icon: LayoutDashboard },
+    { key: 'insights', label: 'AI Insights', icon: Sparkles },
+  ] },
   {
     title: 'Funnel',
     items: [
@@ -32,6 +35,7 @@ export const NAV: NavSection[] = [
 
 export const VIEW_TITLE: Record<ViewKey, string> = {
   overview: 'Overview',
+  insights: 'AI Insights',
   people: 'People Funnel',
   marketing: 'Marketing Funnel',
   campaigns: 'Campaigns',
@@ -44,6 +48,7 @@ export const VIEW_TITLE: Record<ViewKey, string> = {
 
 export const VIEW_SUBTITLE: Record<ViewKey, string> = {
   overview: 'Full-funnel performance at a glance',
+  insights: 'What changed and why — with recommended actions',
   people: 'Person-level, deterministic — pixel-verified',
   marketing: 'Aggregate, platform-reported delivery',
   campaigns: 'utm_* captured per visit — campaign, source, medium',

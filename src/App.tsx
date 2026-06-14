@@ -6,6 +6,7 @@ import { AppShell } from './shell/AppShell';
 import { ErrorBoundary } from './ui/ErrorBoundary';
 import type { ViewKey } from './shell/nav';
 import { Overview } from './views/Overview';
+import { Insights } from './views/Insights';
 import { FunnelView } from './views/FunnelView';
 import { Campaigns } from './views/Campaigns';
 import { Reconciliation } from './views/Reconciliation';
@@ -24,6 +25,7 @@ function Shelled() {
     <AppShell view={view} onNavigate={setView} showFilters={view !== 'map'}>
       <ErrorBoundary label="This view hit an error">
         {view === 'overview' && <Overview onNavigate={(v) => setView(v)} onDrill={drillTo} />}
+        {view === 'insights' && <Insights />}
         {view === 'people' && <FunnelView mode="people" />}
         {view === 'marketing' && <FunnelView mode="marketing" />}
         {view === 'campaigns' && <Campaigns />}
