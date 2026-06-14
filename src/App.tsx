@@ -12,6 +12,7 @@ import { Campaigns } from './views/Campaigns';
 import { Reconciliation } from './views/Reconciliation';
 import { Attribution } from './views/Attribution';
 import { Experiments } from './views/Experiments';
+import { MediaMix } from './views/MediaMix';
 import { Payouts } from './views/Payouts';
 import { Settings } from './views/Settings';
 import { Reports } from './views/Reports';
@@ -36,6 +37,7 @@ function Shelled() {
         {view === 'reconciliation' && <Reconciliation />}
         {view === 'attribution' && <Attribution />}
         {view === 'experiments' && <Experiments />}
+        {view === 'mediamix' && <MediaMix />}
         {view === 'payouts' && <Payouts />}
         {view === 'reports' && <Reports />}
         {view === 'settings' && <Settings />}
