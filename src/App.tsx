@@ -11,6 +11,7 @@ import { FunnelView } from './views/FunnelView';
 import { Campaigns } from './views/Campaigns';
 import { Reconciliation } from './views/Reconciliation';
 import { Attribution } from './views/Attribution';
+import { Experiments } from './views/Experiments';
 import { Payouts } from './views/Payouts';
 import { Settings } from './views/Settings';
 import { Reports } from './views/Reports';
@@ -34,6 +35,7 @@ function Shelled() {
         {view === 'paths' && <Paths />}
         {view === 'reconciliation' && <Reconciliation />}
         {view === 'attribution' && <Attribution />}
+        {view === 'experiments' && <Experiments />}
         {view === 'payouts' && <Payouts />}
         {view === 'reports' && <Reports />}
         {view === 'settings' && <Settings />}

@@ -1,9 +1,9 @@
 import {
-  LayoutDashboard, Users, Megaphone, GitCompareArrows, Scale, Share2, Map, Target, HandCoins, Sparkles, Settings as SettingsIcon, Table2,
+  LayoutDashboard, Users, Megaphone, GitCompareArrows, Scale, Share2, Map, Target, HandCoins, Sparkles, Settings as SettingsIcon, Table2, FlaskConical,
   type LucideIcon,
 } from 'lucide-react';
 
-export type ViewKey = 'overview' | 'insights' | 'people' | 'marketing' | 'campaigns' | 'paths' | 'reconciliation' | 'attribution' | 'payouts' | 'reports' | 'map' | 'settings';
+export type ViewKey = 'overview' | 'insights' | 'people' | 'marketing' | 'campaigns' | 'paths' | 'reconciliation' | 'attribution' | 'experiments' | 'payouts' | 'reports' | 'map' | 'settings';
 
 export interface NavItem { key: ViewKey; label: string; icon: LucideIcon; }
 export interface NavSection { title?: string; items: NavItem[]; }
@@ -27,6 +27,7 @@ export const NAV: NavSection[] = [
     items: [
       { key: 'reconciliation', label: 'Reconciliation', icon: GitCompareArrows },
       { key: 'attribution', label: 'Attribution', icon: Scale },
+      { key: 'experiments', label: 'Incrementality', icon: FlaskConical },
     ],
   },
   { title: 'Partners', items: [{ key: 'payouts', label: 'Partners & Payouts', icon: HandCoins }] },
@@ -46,6 +47,7 @@ export const VIEW_TITLE: Record<ViewKey, string> = {
   paths: 'Conversion Paths',
   reconciliation: 'Reconciliation',
   attribution: 'Attribution by Model',
+  experiments: 'Incrementality',
   payouts: 'Partners & Payouts',
   reports: 'Reports',
   map: 'Geo & Demographics',
@@ -61,6 +63,7 @@ export const VIEW_SUBTITLE: Record<ViewKey, string> = {
   paths: 'Multi-touch journeys across channels',
   reconciliation: 'How many real people? One pixel-verified truth',
   attribution: 'Who gets credit? Total fixed, credit re-split',
+  experiments: 'True causal lift — holdout & geo tests',
   payouts: 'Commissions paid on pixel-verified conversions',
   reports: 'Sortable detail across channels, campaigns and clients',
   map: 'Where your audience lives and who they are',
