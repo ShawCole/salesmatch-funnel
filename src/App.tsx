@@ -12,6 +12,7 @@ import { Campaigns } from './views/Campaigns';
 import { Reconciliation } from './views/Reconciliation';
 import { Attribution } from './views/Attribution';
 import { Payouts } from './views/Payouts';
+import { Settings } from './views/Settings';
 import { Paths } from './views/Paths';
 import { MapView } from './components/MapView';
 
@@ -22,7 +23,7 @@ function Shelled() {
   const drillTo = (id: string) => setDrillIds([...drillIds, id]);
 
   return (
-    <AppShell view={view} onNavigate={setView} showFilters={view !== 'map'}>
+    <AppShell view={view} onNavigate={setView} showFilters={view !== 'map' && view !== 'settings'}>
       <ErrorBoundary label="This view hit an error">
         {view === 'overview' && <Overview onNavigate={(v) => setView(v)} onDrill={drillTo} />}
         {view === 'insights' && <Insights />}
@@ -33,6 +34,7 @@ function Shelled() {
         {view === 'reconciliation' && <Reconciliation />}
         {view === 'attribution' && <Attribution />}
         {view === 'payouts' && <Payouts />}
+        {view === 'settings' && <Settings />}
         {view === 'map' && (
           <div className="relative h-full w-full">
             <FilterProvider>

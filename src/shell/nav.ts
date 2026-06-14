@@ -1,9 +1,9 @@
 import {
-  LayoutDashboard, Users, Megaphone, GitCompareArrows, Scale, Share2, Map, Target, HandCoins, Sparkles,
+  LayoutDashboard, Users, Megaphone, GitCompareArrows, Scale, Share2, Map, Target, HandCoins, Sparkles, Settings as SettingsIcon,
   type LucideIcon,
 } from 'lucide-react';
 
-export type ViewKey = 'overview' | 'insights' | 'people' | 'marketing' | 'campaigns' | 'paths' | 'reconciliation' | 'attribution' | 'payouts' | 'map';
+export type ViewKey = 'overview' | 'insights' | 'people' | 'marketing' | 'campaigns' | 'paths' | 'reconciliation' | 'attribution' | 'payouts' | 'map' | 'settings';
 
 export interface NavItem { key: ViewKey; label: string; icon: LucideIcon; }
 export interface NavSection { title?: string; items: NavItem[]; }
@@ -31,6 +31,7 @@ export const NAV: NavSection[] = [
   },
   { title: 'Partners', items: [{ key: 'payouts', label: 'Partners & Payouts', icon: HandCoins }] },
   { title: 'Audience', items: [{ key: 'map', label: 'Geo & Demographics', icon: Map }] },
+  { title: 'Workspace', items: [{ key: 'settings', label: 'Settings', icon: SettingsIcon }] },
 ];
 
 export const VIEW_TITLE: Record<ViewKey, string> = {
@@ -44,6 +45,7 @@ export const VIEW_TITLE: Record<ViewKey, string> = {
   attribution: 'Attribution by Model',
   payouts: 'Partners & Payouts',
   map: 'Geo & Demographics',
+  settings: 'Settings',
 };
 
 export const VIEW_SUBTITLE: Record<ViewKey, string> = {
@@ -57,4 +59,5 @@ export const VIEW_SUBTITLE: Record<ViewKey, string> = {
   attribution: 'Who gets credit? Total fixed, credit re-split',
   payouts: 'Commissions paid on pixel-verified conversions',
   map: 'Where your audience lives and who they are',
+  settings: 'Integrations, white-label, team and alerts',
 };
