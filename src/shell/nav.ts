@@ -1,9 +1,9 @@
 import {
-  LayoutDashboard, Users, Megaphone, GitCompareArrows, Scale, Share2, Map, Target, HandCoins, Sparkles, Settings as SettingsIcon, Table2, FlaskConical, SlidersHorizontal,
+  LayoutDashboard, Users, Megaphone, GitCompareArrows, Scale, Share2, Map, Target, HandCoins, Sparkles, Settings as SettingsIcon, Table2, FlaskConical, SlidersHorizontal, Gauge,
   type LucideIcon,
 } from 'lucide-react';
 
-export type ViewKey = 'overview' | 'insights' | 'people' | 'marketing' | 'campaigns' | 'paths' | 'reconciliation' | 'attribution' | 'experiments' | 'mediamix' | 'payouts' | 'reports' | 'map' | 'settings';
+export type ViewKey = 'overview' | 'insights' | 'performance' | 'people' | 'marketing' | 'campaigns' | 'paths' | 'reconciliation' | 'attribution' | 'experiments' | 'mediamix' | 'payouts' | 'reports' | 'map' | 'settings';
 
 export interface NavItem { key: ViewKey; label: string; icon: LucideIcon; }
 export interface NavSection { title?: string; items: NavItem[]; }
@@ -16,6 +16,7 @@ export const NAV: NavSection[] = [
   {
     title: 'Funnel',
     items: [
+      { key: 'performance', label: 'Campaign Performance', icon: Gauge },
       { key: 'people', label: 'People Funnel', icon: Users },
       { key: 'marketing', label: 'Marketing Funnel', icon: Megaphone },
       { key: 'campaigns', label: 'Campaigns (UTM)', icon: Target },
@@ -42,6 +43,7 @@ export const NAV: NavSection[] = [
 export const VIEW_TITLE: Record<ViewKey, string> = {
   overview: 'Overview',
   insights: 'AI Insights',
+  performance: 'Campaign Performance',
   people: 'People Funnel',
   marketing: 'Marketing Funnel',
   campaigns: 'Campaigns',
@@ -59,6 +61,7 @@ export const VIEW_TITLE: Record<ViewKey, string> = {
 export const VIEW_SUBTITLE: Record<ViewKey, string> = {
   overview: 'Full-funnel performance at a glance',
   insights: 'What changed and why — with recommended actions',
+  performance: 'Active campaigns — pacing, CPA vs target, next move',
   people: 'Person-level, deterministic — pixel-verified',
   marketing: 'Aggregate, platform-reported delivery',
   campaigns: 'utm_* captured per visit — campaign, source, medium',

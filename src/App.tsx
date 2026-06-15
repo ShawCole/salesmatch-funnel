@@ -7,6 +7,7 @@ import { ErrorBoundary } from './ui/ErrorBoundary';
 import type { ViewKey } from './shell/nav';
 import { Overview } from './views/Overview';
 import { Insights } from './views/Insights';
+import { CampaignPerformance } from './views/CampaignPerformance';
 import { FunnelView } from './views/FunnelView';
 import { Campaigns } from './views/Campaigns';
 import { Reconciliation } from './views/Reconciliation';
@@ -30,6 +31,7 @@ function Shelled() {
       <ErrorBoundary label="This view hit an error">
         {view === 'overview' && <Overview onNavigate={(v) => setView(v)} onDrill={drillTo} />}
         {view === 'insights' && <Insights />}
+        {view === 'performance' && <CampaignPerformance />}
         {view === 'people' && <FunnelView mode="people" />}
         {view === 'marketing' && <FunnelView mode="marketing" />}
         {view === 'campaigns' && <Campaigns />}
