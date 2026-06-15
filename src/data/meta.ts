@@ -47,11 +47,18 @@ export interface AccountSummary {
   pulledAt?: string;
 }
 
-// Meta action_types we count as a conversion (configurable per client objective).
-export const CONVERSION_ACTION_TYPES = [
-  'lead', 'offsite_conversion.fb_pixel_lead', 'onsite_conversion.lead_grouped',
-  'purchase', 'offsite_conversion.fb_pixel_purchase', 'offsite_conversion.fb_pixel_complete_registration',
+// Meta reports the SAME conversion under multiple action_type aliases (e.g. a
+// lead-form lead appears as `lead`, `onsite_conversion.lead_grouped`, AND
+// `offsite_complete_registration_add_meta_leads` — all the same 239). Summing
+// them triple-counts (the exact over-attribution we exist to catch). So we count
+// by CONCEPT: take the first alias present per concept, then sum across concepts.
+export const CONVERSION_CONCEPTS: string[][] = [
+  ['onsite_conversion.lead_grouped', 'lead', 'offsite_conversion.fb_pixel_lead', 'offsite_complete_registration_add_meta_leads'],
+  ['purchase', 'offsite_conversion.fb_pixel_purchase'],
+  ['complete_registration', 'offsite_conversion.fb_pixel_complete_registration'],
 ];
+// flat list (reference / back-compat)
+export const CONVERSION_ACTION_TYPES = CONVERSION_CONCEPTS.flat();
 
 const ACTION_META: Record<ActionKind, { label: string }> = {
   scale: { label: 'Scale' }, watch: { label: 'On track' }, fix: { label: 'Fix' },
@@ -80,7 +87,12 @@ interface RawPull {
 }
 function sumConversions(actions: any[] | undefined): number {
   if (!actions) return 0;
-  return actions.filter((a) => CONVERSION_ACTION_TYPES.includes(a.action_type)).reduce((s, a) => s + Number(a.value || 0), 0);
+  const byType = new Map<string, number>(actions.map((a) => [a.action_type, Number(a.value || 0)]));
+  let total = 0;
+  for (const concept of CONVERSION_CONCEPTS) {
+    for (const t of concept) { if (byType.has(t)) { total += byType.get(t)!; break; } } // first alias only
+  }
+  return total;
 }
 export function normalizeMeta(raw: RawPull): { campaigns: CampaignPerf[]; account: AccountSummary } {
   const byCamp = new Map<string, any[]>();
@@ -112,6 +124,16 @@ export function normalizeMeta(raw: RawPull): { campaigns: CampaignPerf[]; accoun
       action: recommendAction(base),
     };
   });
+  // No CPA goal comes from Meta — use the account's blended CPA as a "vs average"
+  // target so recommendations are actionable (real per-campaign goals land later).
+  const conv0 = campaigns.reduce((s, c) => s + c.conversions, 0);
+  const spend0 = campaigns.reduce((s, c) => s + c.spendCents, 0);
+  const blended = conv0 ? Math.round(spend0 / conv0) : null;
+  if (blended) for (const c of campaigns) {
+    c.targetCpaCents = blended;
+    c.action = recommendAction({ status: c.status, cpaCents: c.cpaCents, targetCpaCents: blended, pacingPct: c.pacingPct });
+  }
+
   const spendCents = campaigns.reduce((s, c) => s + c.spendCents, 0);
   const conversions = campaigns.reduce((s, c) => s + c.conversions, 0);
   const account: AccountSummary = {
