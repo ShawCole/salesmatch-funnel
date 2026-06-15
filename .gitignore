@@ -27,3 +27,7 @@ src/data/records.json
 # Local Netlify folder
 .netlify
 .shot.mjs
+
+# Meta / real-data ingestion (local only — never commit secrets or client data)
+.env.local
+src/data/real/
